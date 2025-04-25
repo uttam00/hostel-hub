@@ -7,6 +7,7 @@ import { Star } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import HostelMap from "@/components/HostelMap";
+import Image from "next/image";
 
 export default function HostelDetailPage() {
   const router = useRouter();
@@ -94,6 +95,25 @@ export default function HostelDetailPage() {
             {hostel.address}, {hostel.city}, {hostel.state} {hostel.zipCode}
           </p>
         </div>
+
+        {/* Image Gallery */}
+        {hostel.images && hostel.images.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Photos</h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {hostel.images.map((image: string, index: number) => (
+                <div key={index} className="relative aspect-video">
+                  <Image
+                    src={image}
+                    alt={`${hostel.name} - Image ${index + 1}`}
+                    fill
+                    className="rounded-lg object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-8 md:grid-cols-2">
           <div>

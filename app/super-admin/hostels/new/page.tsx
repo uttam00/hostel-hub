@@ -1,20 +1,28 @@
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import NewHostelForm from "@/components/super-admin/NewHostelForm";
+"use client";
 
-export default async function NewHostelPage() {
-  const user = await getCurrentUser();
+import HostelForm from "@/app/components/HostelForm";
+import { createHostel } from "@/services/hostel-service";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-  if (!user || user.role !== "SUPER_ADMIN") {
-    redirect("/");
-  }
+export default function NewHostelPage() {
+  const router = useRouter();
+
+  const handleSubmit = async (data: any) => {
+    try {
+      await createHostel(data);
+      toast.success("Hostel created successfully");
+      router.push("/super-admin/hostels");
+    } catch (error) {
+      console.error("Error creating hostel:", error);
+      toast.error("Failed to create hostel");
+    }
+  };
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Add New Hostel</h1>
-        <NewHostelForm />
-      </div>
+    <div className="container mx-auto pb-8">
+      <h1 className="text-2xl font-bold mb-8">Create New Hostel</h1>
+      <HostelForm onSubmit={handleSubmit} />
     </div>
   );
 }

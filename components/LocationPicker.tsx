@@ -72,6 +72,15 @@ function MapWithAutocomplete({
 }) {
   const [searchBox, setSearchBox] =
     useState<google.maps.places.Autocomplete | null>(null);
+  const [mapCenter, setMapCenter] = useState(
+    selectedLocation || { lat: 23.0225, lng: 72.5714 }
+  );
+
+  useEffect(() => {
+    if (selectedLocation) {
+      setMapCenter(selectedLocation);
+    }
+  }, [selectedLocation]);
 
   useEffect(() => {
     if (inputRef.current && !searchBox) {
@@ -88,22 +97,21 @@ function MapWithAutocomplete({
         }
       );
 
-      // 👇 Bias results toward Ahmedabad initially (can be adjusted dynamically with map bounds too)
       autocomplete.setBounds(
         new google.maps.LatLngBounds(
-          { lat: 22.5, lng: 72.0 }, // SW corner
-
-          { lat: 23.5, lng: 73.0 } // NE corner
+          { lat: 22.5, lng: 72.0 },
+          { lat: 23.5, lng: 73.0 }
         )
       );
 
-      autocomplete.setOptions({ strictBounds: false }); // no country restriction
+      autocomplete.setOptions({ strictBounds: false });
 
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
         if (place.geometry?.location) {
           const lat = place.geometry.location.lat();
           const lng = place.geometry.location.lng();
+          setMapCenter({ lat, lng });
 
           const { address, city, state, zipCode, country } =
             extractLocationComponents(place);
@@ -128,7 +136,7 @@ function MapWithAutocomplete({
   return (
     <GoogleMap
       mapContainerStyle={containerStyle}
-      center={selectedLocation || { lat: 0, lng: 0 }}
+      center={mapCenter}
       zoom={15}
       onClick={handleMapClick}
     >
@@ -186,28 +194,23 @@ export default function LocationPicker({
   };
 
   return (
-    <LoadScript
-      googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}
-      libraries={["places"]}
-    >
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="location">Search Location</Label>
-          <Input
-            ref={inputRef}
-            id="location"
-            type="text"
-            placeholder="Search for a location"
-            defaultValue={initialAddress}
-          />
-        </div>
-        <MapWithAutocomplete
-          inputRef={inputRef}
-          selectedLocation={selectedLocation}
-          onLocationSelect={onLocationSelect}
-          handleMapClick={handleMapClick}
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="location">Search Location</Label>
+        <Input
+          ref={inputRef}
+          id="location"
+          type="text"
+          placeholder="Search for a location"
+          defaultValue={initialAddress}
         />
       </div>
-    </LoadScript>
+      <MapWithAutocomplete
+        inputRef={inputRef}
+        selectedLocation={selectedLocation}
+        onLocationSelect={onLocationSelect}
+        handleMapClick={handleMapClick}
+      />
+    </div>
   );
 }

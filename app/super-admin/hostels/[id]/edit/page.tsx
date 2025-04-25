@@ -1,27 +1,55 @@
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import { getHostelById } from "@/services/hostel-service";
-import NewHostelForm from "@/components/super-admin/NewHostelForm";
+"use client";
 
-export default async function EditHostelPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const user = await getCurrentUser();
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import HostelForm from "@/app/components/HostelForm";
+import { getHostelById, updateHostel } from "@/services/hostel-service";
+import { toast } from "sonner";
 
-  if (!user || user.role !== "SUPER_ADMIN") {
-    redirect("/");
+export default function EditHostelPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const [hostel, setHostel] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHostel = async () => {
+      try {
+        const data = await getHostelById(params.id);
+        setHostel(data);
+      } catch (error) {
+        console.error("Error fetching hostel:", error);
+        toast.error("Failed to fetch hostel details");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHostel();
+  }, [params.id]);
+
+  const handleSubmit = async (data: any) => {
+    try {
+      await updateHostel(params.id, data);
+      toast.success("Hostel updated successfully");
+      router.push("/super-admin/hostels");
+    } catch (error) {
+      console.error("Error updating hostel:", error);
+      toast.error("Failed to update hostel");
+    }
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  const hostel = await getHostelById(params.id);
+  if (!hostel) {
+    return <div>Hostel not found</div>;
+  }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Edit Hostel</h1>
-        <NewHostelForm hostel={hostel} mode="edit" />
-      </div>
+    <div className="container mx-auto py-10">
+      <h1 className="text-2xl font-bold mb-8">Edit Hostel</h1>
+      <HostelForm initialData={hostel} onSubmit={handleSubmit} />
     </div>
   );
 }

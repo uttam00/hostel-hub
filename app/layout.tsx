@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { GoogleMapsProvider } from "@/components/providers/google-maps-provider";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Toaster } from "@/components/ui/sonner";
@@ -31,14 +32,16 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className="min-h-screen flex flex-col">
-              <Header />
-              <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex-1">
-                {children}
+            <GoogleMapsProvider>
+              <div className="min-h-screen flex flex-col">
+                <Header />
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex-1">
+                  {children}
+                </div>
+                <Footer />
+                <Toaster />
               </div>
-              <Footer />
-              <Toaster />
-            </div>
+            </GoogleMapsProvider>
           </ThemeProvider>
         </SessionProvider>
       </body>

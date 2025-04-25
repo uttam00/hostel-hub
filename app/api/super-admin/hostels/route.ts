@@ -17,13 +17,51 @@ const hostelSchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   amenities: z.array(z.string()),
+  images: z.array(z.string()).min(1, "At least one image is required"),
   totalRooms: z.number().min(1, "Must have at least 1 room"),
   adminId: z.string().optional(),
+  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
+  averageRating: z.number().default(0),
+  reviewCount: z.number().default(0),
+  availableRooms: z.number().default(0),
+  lowestPrice: z.number().default(0),
 });
 
 // Schema for hostel status update
 const hostelStatusSchema = z.object({
   status: z.enum(["ACTIVE", "INACTIVE"]),
+});
+
+// Schema for hostel update
+const hostelUpdateSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").optional(),
+  description: z
+    .string()
+    .min(10, "Description must be at least 10 characters")
+    .optional(),
+  address: z
+    .string()
+    .min(5, "Address must be at least 5 characters")
+    .optional(),
+  city: z.string().min(2, "City must be at least 2 characters").optional(),
+  state: z.string().min(2, "State must be at least 2 characters").optional(),
+  zipCode: z
+    .string()
+    .min(5, "Zip code must be at least 5 characters")
+    .optional(),
+  country: z
+    .string()
+    .min(2, "Country must be at least 2 characters")
+    .optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  amenities: z.array(z.string()).optional(),
+  images: z.array(z.string()).optional(),
+  status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
+  averageRating: z.number().optional(),
+  reviewCount: z.number().optional(),
+  availableRooms: z.number().optional(),
+  lowestPrice: z.number().optional(),
 });
 
 // Define types for the hostel with included relations
@@ -232,7 +270,7 @@ export async function POST(req: Request) {
   }
 }
 
-// PUT update hostel status (super admin only)
+// PUT update hostel (super admin only)
 export async function PUT(req: Request) {
   try {
     const user = await getCurrentUser();
@@ -251,7 +289,7 @@ export async function PUT(req: Request) {
       );
     }
 
-    const validatedData = hostelStatusSchema.parse(updateData);
+    const validatedData = hostelUpdateSchema.parse(updateData);
 
     const hostel = await prisma.hostel.update({
       where: { id: hostelId },
@@ -266,9 +304,9 @@ export async function PUT(req: Request) {
         { status: 400 }
       );
     }
-    console.error("Error updating hostel status:", error);
+    console.error("Error updating hostel:", error);
     return NextResponse.json(
-      { error: "Failed to update hostel status" },
+      { error: "Failed to update hostel" },
       { status: 500 }
     );
   }

@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 // Types
 export enum HostelStatus {
   ACTIVE = "ACTIVE",
@@ -16,6 +18,7 @@ export type Hostel = {
   latitude?: number;
   longitude?: number;
   amenities: string[];
+  images: string[];
   averageRating: number;
   reviewCount: number;
   availableRooms: number;
@@ -31,9 +34,21 @@ export type Hostel = {
   admins?: { id: string; name?: string | null; email?: string | null }[];
 };
 
-export type HostelDetails = Hostel & {
-  rooms: Room[];
-  reviews: Review[];
+export type HostelDetails = Prisma.HostelGetPayload<{
+  include: {
+    rooms: true;
+    reviews: {
+      include: {
+        user: true;
+      };
+    };
+  };
+}> & {
+  averageRating: number;
+  reviewCount: number;
+  availableRooms: number;
+  lowestPrice: number;
+  totalRooms: number;
 };
 
 export type Room = {
@@ -86,18 +101,31 @@ export async function getHostels(params?: {
   const queryString = searchParams.toString();
   const url = `${baseUrl}/api/hostels${queryString ? `?${queryString}` : ""}`;
 
-  const response = await fetch(url);
+  try {
+    const response = await fetch(url);
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch hostels");
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Hostel fetch error:", {
+        status: response.status,
+        statusText: response.statusText,
+        errorData,
+      });
+      throw new Error(
+        `Failed to fetch hostels: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+
+    return {
+      data: data.hostels,
+      pagination: data.pagination,
+    };
+  } catch (error) {
+    console.error("Error in getHostels:", error);
+    throw error;
   }
-
-  const data = await response.json();
-
-  return {
-    data: data.hostels,
-    pagination: data.pagination,
-  };
 }
 
 // Fetch a single hostel by ID
@@ -108,7 +136,9 @@ export async function getHostelById(id: string): Promise<HostelDetails> {
     throw new Error("Failed to fetch hostel");
   }
 
-  return await response.json();
+  const hostel = await response.json();
+  // hostel.images will contain the array of image URLs
+  return hostel;
 }
 
 // Create a new hostel

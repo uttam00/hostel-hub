@@ -61,8 +61,11 @@ async function main() {
       country: "USA",
       latitude: 40.7128,
       longitude: -74.006,
-      image:
+      images: [
         "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80",
+      ],
       amenities: ["WiFi", "Laundry", "Kitchen", "Common Room"],
       admins: {
         connect: { id: hostelAdmin.id },
@@ -84,8 +87,11 @@ async function main() {
       country: "USA",
       latitude: 39.7392,
       longitude: -104.9903,
-      image:
+      images: [
         "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80",
+      ],
       amenities: ["WiFi", "Parking", "Garden", "BBQ Area"],
       admins: {
         connect: { id: hostelAdmin.id },

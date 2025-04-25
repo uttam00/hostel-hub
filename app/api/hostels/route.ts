@@ -110,8 +110,18 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error("Error fetching hostels:", error);
+    // Return more detailed error information
     return NextResponse.json(
-      { error: "Failed to fetch hostels" },
+      {
+        error: "Failed to fetch hostels",
+        details: error instanceof Error ? error.message : String(error),
+        stack:
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.stack
+              : undefined
+            : undefined,
+      },
       { status: 500 }
     );
   }
