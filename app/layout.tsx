@@ -3,6 +3,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Toaster } from "@/components/ui/sonner";
@@ -21,17 +22,24 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <SessionProvider>
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex-1">
-              {children}
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="min-h-screen flex flex-col">
+              <Header />
+              <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex-1">
+                {children}
+              </div>
+              <Footer />
+              <Toaster />
             </div>
-            <Footer />
-            <Toaster />
-          </div>
+          </ThemeProvider>
         </SessionProvider>
       </body>
     </html>

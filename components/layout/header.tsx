@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Building } from "lucide-react";
 import { UserAccountNav } from "@/components/auth/user-account-nav";
 import { useSession } from "next-auth/react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
   const { data: session } = useSession();
@@ -35,6 +36,7 @@ export function Header() {
           </nav>
         )}
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <UserAccountNav />
         </div>
       </div>
