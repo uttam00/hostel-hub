@@ -36,14 +36,33 @@ export async function POST(
       );
     }
 
-    // Update admin with hostel assignment
-    const updatedAdmin = await prisma.admin.update({
+    // Check if admin exists and is actually an admin
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      return NextResponse.json({ message: "Admin not found" }, { status: 404 });
+    }
+
+    if (admin.role !== "HOSTEL_ADMIN" && admin.role !== "SUPER_ADMIN") {
+      return NextResponse.json(
+        { message: "User is not an admin" },
+        { status: 400 }
+      );
+    }
+
+    // Update user with hostel assignment
+    const updatedAdmin = await prisma.user.update({
       where: { id: adminId },
       data: {
-        hostelId,
+        hostels: {
+          connect: { id: hostelId },
+        },
       },
       include: {
-        hostel: {
+        hostels: {
+          where: { id: hostelId },
           select: {
             name: true,
           },

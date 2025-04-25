@@ -61,7 +61,14 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        // Allow public access to register page
+        if (req.nextUrl.pathname === "/auth/register") {
+          return true;
+        }
+        // Require authentication for all other matched routes
+        return !!token;
+      },
     },
     pages: {
       signIn: "/auth/login",

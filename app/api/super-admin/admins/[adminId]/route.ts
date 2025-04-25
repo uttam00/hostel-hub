@@ -17,7 +17,7 @@ export async function DELETE(
     const { adminId } = params;
 
     // Check if admin exists
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.user.findUnique({
       where: { id: adminId },
     });
 
@@ -25,8 +25,16 @@ export async function DELETE(
       return NextResponse.json({ message: "Admin not found" }, { status: 404 });
     }
 
+    // Check if the user is actually an admin
+    if (admin.role !== "HOSTEL_ADMIN" && admin.role !== "SUPER_ADMIN") {
+      return NextResponse.json(
+        { message: "User is not an admin" },
+        { status: 400 }
+      );
+    }
+
     // Delete the admin
-    await prisma.admin.delete({
+    await prisma.user.delete({
       where: { id: adminId },
     });
 

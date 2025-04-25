@@ -3,19 +3,34 @@
 import Link from "next/link";
 import { Building } from "lucide-react";
 import { RegisterForm } from "@/components/auth/register-form";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { redirect } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-export default async function RegisterPage() {
-  const session = await getServerSession(authOptions);
+export default function RegisterPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  // Redirect to appropriate dashboard if already logged in
-  if (session?.user) {
-    const role = session.user.role;
-    const redirectPath = role === "STUDENT" ? "/dashboard" : "/admin";
-    redirect(redirectPath);
-  }
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      const role = session.user.role;
+      let redirectPath = "/";
+
+      switch (role) {
+        case "SUPER_ADMIN":
+          redirectPath = "/super-admin";
+          break;
+        case "HOSTEL_ADMIN":
+          redirectPath = "/hostel-admin";
+          break;
+        case "STUDENT":
+          redirectPath = "/dashboard";
+          break;
+      }
+
+      router.push(redirectPath);
+    }
+  }, [session, status, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted p-4">
