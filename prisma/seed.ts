@@ -4,198 +4,208 @@ const bcrypt = require("bcryptjs");
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Starting seeding...");
+  // Hash the password
+  const hashedPassword = await bcrypt.hash("iMedia@009", 10);
 
-  // Create users with different roles
-  const hashedPassword = await bcrypt.hash("password123", 10);
-
-  // Create a student user
-  const student = await prisma.user.upsert({
-    where: { email: "student@example.com" },
-    update: {},
-    create: {
-      email: "student@example.com",
-      name: "Student User",
-      password: hashedPassword,
-      role: "STUDENT",
-    },
-  });
-
-  // Create a hostel admin user
-  const hostelAdmin = await prisma.user.upsert({
-    where: { email: "admin@example.com" },
-    update: {},
-    create: {
-      email: "admin@example.com",
-      name: "Hostel Admin",
-      password: hashedPassword,
-      role: "HOSTEL_ADMIN",
-    },
-  });
-
-  // Create a super admin user
-  const superAdmin = await prisma.user.upsert({
-    where: { email: "superadmin@example.com" },
-    update: {},
-    create: {
-      email: "superadmin@example.com",
-      name: "Super Admin",
-      password: hashedPassword,
-      role: "SUPER_ADMIN",
-    },
-  });
-
-  // Create hostels
-  const hostel1 = await prisma.hostel.upsert({
-    where: { id: "hostel-1" },
-    update: {},
-    create: {
-      id: "hostel-1",
-      name: "Sunshine Hostel",
-      description:
-        "A cozy hostel in the heart of the city with modern amenities.",
-      address: "123 Main St",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001",
-      country: "USA",
-      latitude: 40.7128,
-      longitude: -74.006,
-      images: [
-        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80",
-      ],
-      amenities: ["WiFi", "Laundry", "Kitchen", "Common Room"],
-      admins: {
-        connect: { id: hostelAdmin.id },
+  // Create Users
+  const users = await Promise.all([
+    prisma.user.upsert({
+      where: { email: "student@example.com" },
+      update: {},
+      create: {
+        name: "Student User",
+        email: "student@example.com",
+        password: hashedPassword,
+        role: "STUDENT",
       },
-    },
-  });
-
-  const hostel2 = await prisma.hostel.upsert({
-    where: { id: "hostel-2" },
-    update: {},
-    create: {
-      id: "hostel-2",
-      name: "Mountain View Hostel",
-      description: "A peaceful hostel with beautiful mountain views.",
-      address: "456 Oak Ave",
-      city: "Denver",
-      state: "CO",
-      zipCode: "80201",
-      country: "USA",
-      latitude: 39.7392,
-      longitude: -104.9903,
-      images: [
-        "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80",
-      ],
-      amenities: ["WiFi", "Parking", "Garden", "BBQ Area"],
-      admins: {
-        connect: { id: hostelAdmin.id },
+    }),
+    prisma.user.upsert({
+      where: { email: "hosteladmin@example.com" },
+      update: {},
+      create: {
+        name: "Hostel Admin",
+        email: "hosteladmin@example.com",
+        password: hashedPassword,
+        role: "HOSTEL_ADMIN",
       },
-    },
-  });
+    }),
+    prisma.user.upsert({
+      where: { email: "superadmin@example.com" },
+      update: {},
+      create: {
+        name: "Super Admin",
+        email: "superadmin@example.com",
+        password: hashedPassword,
+        role: "SUPER_ADMIN",
+      },
+    }),
+  ]);
 
-  // Create rooms for hostel1
-  await prisma.room.upsert({
-    where: { id: "room-1" },
-    update: {},
-    create: {
-      id: "room-1",
-      roomNumber: "101",
-      roomType: "SINGLE",
-      description: "Cozy single room with a desk",
-      price: 50,
-      capacity: 1,
-      isAvailable: true,
-      amenities: ["WiFi", "Desk", "Private Bathroom"],
-      hostelId: hostel1.id,
-    },
-  });
+  // Create Hostels
+  const hostels = await Promise.all([
+    prisma.hostel.create({
+      data: {
+        name: "University Heights",
+        description: "Modern hostel near university campus",
+        address: "123 University Ave",
+        city: "New York",
+        state: "NY",
+        zipCode: "10001",
+        country: "USA",
+        latitude: 40.7128,
+        longitude: -74.006,
+        amenities: ["WiFi", "Laundry", "Kitchen", "Study Room"],
+        images: ["image1.jpg", "image2.jpg"],
+        admins: {
+          connect: [{ id: users[1].id }],
+        },
+      },
+    }),
+    prisma.hostel.create({
+      data: {
+        name: "Campus Living",
+        description: "Affordable student accommodation",
+        address: "456 College St",
+        city: "Boston",
+        state: "MA",
+        zipCode: "02108",
+        country: "USA",
+        latitude: 42.3601,
+        longitude: -71.0589,
+        amenities: ["WiFi", "Gym", "Common Room"],
+        images: ["image3.jpg", "image4.jpg"],
+        admins: {
+          connect: [{ id: users[1].id }],
+        },
+      },
+    }),
+    prisma.hostel.create({
+      data: {
+        name: "Student Haven",
+        description: "Comfortable living for students",
+        address: "789 Student Blvd",
+        city: "Chicago",
+        state: "IL",
+        zipCode: "60601",
+        country: "USA",
+        latitude: 41.8781,
+        longitude: -87.6298,
+        amenities: ["WiFi", "Laundry", "Kitchen"],
+        images: ["image5.jpg", "image6.jpg"],
+        admins: {
+          connect: [{ id: users[1].id }],
+        },
+      },
+    }),
+  ]);
 
-  await prisma.room.upsert({
-    where: { id: "room-2" },
-    update: {},
-    create: {
-      id: "room-2",
-      roomNumber: "102",
-      roomType: "DOUBLE",
-      description: "Spacious double room with two beds",
-      price: 80,
-      capacity: 2,
-      isAvailable: true,
-      amenities: ["WiFi", "TV", "Shared Bathroom"],
-      hostelId: hostel1.id,
-    },
-  });
+  // Create Rooms
+  const rooms = await Promise.all([
+    prisma.room.create({
+      data: {
+        roomNumber: "101",
+        roomType: "SINGLE",
+        description: "Single room with study desk",
+        price: 500.0,
+        capacity: 1,
+        amenities: ["WiFi", "Desk", "Wardrobe"],
+        hostelId: hostels[0].id,
+      },
+    }),
+    prisma.room.create({
+      data: {
+        roomNumber: "102",
+        roomType: "DOUBLE",
+        description: "Double room with shared bathroom",
+        price: 800.0,
+        capacity: 2,
+        amenities: ["WiFi", "Desk", "Wardrobe", "Shared Bathroom"],
+        hostelId: hostels[0].id,
+      },
+    }),
+    prisma.room.create({
+      data: {
+        roomNumber: "201",
+        roomType: "TRIPLE",
+        description: "Triple room with private bathroom",
+        price: 1200.0,
+        capacity: 3,
+        amenities: ["WiFi", "Desk", "Wardrobe", "Private Bathroom"],
+        hostelId: hostels[1].id,
+      },
+    }),
+  ]);
 
-  // Create rooms for hostel2
-  await prisma.room.upsert({
-    where: { id: "room-3" },
-    update: {},
-    create: {
-      id: "room-3",
-      roomNumber: "201",
-      roomType: "TRIPLE",
-      description: "Triple room with three single beds",
-      price: 120,
-      capacity: 3,
-      isAvailable: true,
-      amenities: ["WiFi", "TV", "Shared Bathroom"],
-      hostelId: hostel2.id,
-    },
-  });
+  // Create Bookings
+  const bookings = await Promise.all([
+    prisma.booking.create({
+      data: {
+        checkIn: new Date("2024-03-01"),
+        checkOut: new Date("2024-06-30"),
+        status: "CONFIRMED",
+        totalPrice: 2000.0,
+        userId: users[0].id,
+        roomId: rooms[0].id,
+      },
+    }),
+    prisma.booking.create({
+      data: {
+        checkIn: new Date("2024-03-15"),
+        checkOut: new Date("2024-07-15"),
+        status: "PENDING",
+        totalPrice: 3200.0,
+        userId: users[0].id,
+        roomId: rooms[1].id,
+      },
+    }),
+  ]);
 
-  await prisma.room.upsert({
-    where: { id: "room-4" },
-    update: {},
-    create: {
-      id: "room-4",
-      roomNumber: "202",
-      roomType: "DORMITORY",
-      description: "Dormitory with 6 bunk beds",
-      price: 30,
-      capacity: 12,
-      isAvailable: true,
-      amenities: ["WiFi", "Lockers", "Shared Bathroom"],
-      hostelId: hostel2.id,
-    },
-  });
+  // Create Payments
+  const payments = await Promise.all([
+    prisma.payment.create({
+      data: {
+        amount: 2000.0,
+        status: "COMPLETED",
+        method: "Credit Card",
+        bookingId: bookings[0].id,
+      },
+    }),
+    prisma.payment.create({
+      data: {
+        amount: 3200.0,
+        status: "PENDING",
+        method: "Bank Transfer",
+        bookingId: bookings[1].id,
+      },
+    }),
+  ]);
 
-  // Create reviews
-  await prisma.review.upsert({
-    where: { id: "review-1" },
-    update: {},
-    create: {
-      id: "review-1",
-      rating: 5,
-      comment: "Great place to stay! Very clean and friendly staff.",
-      userId: student.id,
-      hostelId: hostel1.id,
-    },
-  });
+  // Create Reviews
+  await Promise.all([
+    prisma.review.create({
+      data: {
+        rating: 5,
+        comment: "Great place to stay!",
+        userId: users[0].id,
+        hostelId: hostels[0].id,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        rating: 4,
+        comment: "Good facilities but a bit noisy",
+        userId: users[0].id,
+        hostelId: hostels[1].id,
+      },
+    }),
+  ]);
 
-  await prisma.review.upsert({
-    where: { id: "review-2" },
-    update: {},
-    create: {
-      id: "review-2",
-      rating: 4,
-      comment: "Nice location but a bit noisy at night.",
-      userId: student.id,
-      hostelId: hostel2.id,
-    },
-  });
-
-  console.log("✅ Seeding completed!");
+  console.log("Seed data created successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Error during seeding:", e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {
