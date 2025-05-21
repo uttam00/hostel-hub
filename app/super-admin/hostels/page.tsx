@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
 import HostelManagement from "@/components/super-admin/HostelManagement";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Hostel } from "@/services/hostel-service";
+import { useEffect, useState } from "react";
 
 export default function HostelsPage() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,7 @@ export default function HostelsPage() {
 
   return (
     <div className="container mx-auto pb-8">
-      <HostelManagement hostels={hostels} />
+      <HostelManagement hostels={hostels} userRole={user ? user.role : ""} />
     </div>
   );
 }

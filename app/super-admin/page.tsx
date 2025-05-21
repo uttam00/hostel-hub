@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
+import DashboardCard from "@/components/dashboardCard";
 import { getCurrentUser } from "@/lib/auth";
 import { getHostels } from "@/services/hostel-service";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building, Users } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function SuperAdminDashboard() {
   const user = await getCurrentUser();
@@ -19,44 +19,40 @@ export default async function SuperAdminDashboard() {
     0
   );
 
+  const cardData = [
+    {
+      title: "Total Hostels",
+      count: totalHostels,
+      description: "Manage all hostels and their admins",
+      icon: Building,
+      link: "/super-admin/hostels",
+    },
+    {
+      title: "Total Hostel Admins",
+      count: totalAdmins,
+      description: "Manage hostel administrators",
+      icon: Users,
+      link: "/super-admin/admins",
+    },
+  ];
+
   return (
     <div className="container mx-auto pb-8">
       <h1 className="text-2xl font-bold mb-8">Super Admin Dashboard</h1>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Link href="/super-admin/hostels">
-          <Card className="hover:bg-accent transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Hostels
-              </CardTitle>
-              <Building className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalHostels}</div>
-              <p className="text-xs text-muted-foreground">
-                Manage all hostels and their admins
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/super-admin/admins">
-          <Card className="hover:bg-accent transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Hostel Admins
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalAdmins}</div>
-              <p className="text-xs text-muted-foreground">
-                Manage hostel administrators
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+        {cardData.map(({ count, description, icon, link, title }, index) => {
+          return (
+            <Link href={link} key={`${index}-${title}`}>
+              <DashboardCard
+                cardDescription={description}
+                cardIcon={icon}
+                cardTitle={title}
+                count={count}
+              />
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

@@ -15,23 +15,23 @@ export async function POST(
     }
 
     const { adminId } = params;
-    const { hostelId } = await req.json();
+    const { hostelIds } = await req.json();
 
-    if (!hostelId) {
+    if (!hostelIds || !Array.isArray(hostelIds) || hostelIds.length === 0) {
       return NextResponse.json(
-        { message: "Hostel ID is required" },
+        { message: "At least one hostel ID is required" },
         { status: 400 }
       );
     }
 
-    // Check if hostel exists and is active
-    const hostel = await prisma.hostel.findUnique({
-      where: { id: hostelId },
+    // Check if all hostels exist and are active
+    const hostels = await prisma.hostel.findMany({
+      where: { id: { in: hostelIds } },
     });
 
-    if (!hostel) {
+    if (hostels.length !== hostelIds.length) {
       return NextResponse.json(
-        { message: "Hostel not found" },
+        { message: "One or more hostels not found" },
         { status: 404 }
       );
     }
@@ -52,18 +52,32 @@ export async function POST(
       );
     }
 
-    // Update user with hostel assignment
+    // First, disconnect all existing hostel assignments
+    await prisma.user.update({
+      where: { id: adminId },
+      data: {
+        hostels: {
+          set: [], // This will remove all existing hostel connections
+        },
+      },
+    });
+
+    // Then, connect the new hostel assignments
     const updatedAdmin = await prisma.user.update({
       where: { id: adminId },
       data: {
         hostels: {
-          connect: { id: hostelId },
+          connect: hostelIds.map((id) => ({ id })),
         },
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
         hostels: {
-          where: { id: hostelId },
           select: {
+            id: true,
             name: true,
           },
         },
@@ -72,9 +86,9 @@ export async function POST(
 
     return NextResponse.json(updatedAdmin);
   } catch (error) {
-    console.error("Error assigning hostel to admin:", error);
+    console.error("Error assigning hostels to admin:", error);
     return NextResponse.json(
-      { message: "Failed to assign hostel to admin" },
+      { message: "Failed to assign hostels to admin" },
       { status: 500 }
     );
   }

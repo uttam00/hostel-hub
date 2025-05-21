@@ -1,18 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -22,11 +10,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import {
   Form,
   FormControl,
@@ -35,13 +18,36 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useToast } from "@/components/ui/use-toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { HostelStatus } from "@prisma/client";
+import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 interface Admin {
   id: string;
   name: string;
   email: string;
-  hostelId?: string;
-  hostelName?: string;
+  hostels: Array<{ id: string; name: string }>;
 }
 
 interface Hostel {
@@ -57,7 +63,7 @@ const formSchema = z.object({
 });
 
 const assignHostelSchema = z.object({
-  hostelId: z.string().min(1, "Please select a hostel"),
+  hostelIds: z.array(z.string()).min(1, "Please select at least one hostel"),
 });
 
 export default function AdminsPage() {
@@ -82,9 +88,16 @@ export default function AdminsPage() {
   const assignForm = useForm<z.infer<typeof assignHostelSchema>>({
     resolver: zodResolver(assignHostelSchema),
     defaultValues: {
-      hostelId: "",
+      hostelIds: [],
     },
   });
+
+  useEffect(() => {
+    if (assignDialogOpen && selectedAdmin) {
+      const initialHostelIds = selectedAdmin.hostels.map((hostel) => hostel.id);
+      assignForm.reset({ hostelIds: initialHostelIds });
+    }
+  }, [assignDialogOpen, selectedAdmin, assignForm]);
 
   const fetchAdmins = async () => {
     try {
@@ -105,8 +118,14 @@ export default function AdminsPage() {
   const fetchHostels = async () => {
     try {
       const response = await fetch("/api/super-admin/hostels");
-      const data = await response.json();
-      setHostels(data.filter((hostel: Hostel) => hostel.status === "active"));
+      const { hostels } = await response.json();
+
+      console.log({ hostels });
+      setHostels(
+        hostels.filter(
+          (hostel: Hostel) => hostel.status === HostelStatus.ACTIVE
+        )
+      );
     } catch (error) {
       toast({
         title: "Error",
@@ -170,12 +189,12 @@ export default function AdminsPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || "Failed to assign hostel");
+        throw new Error(data.message || "Failed to assign hostels");
       }
 
       toast({
         title: "Success",
-        description: "Admin assigned to hostel successfully",
+        description: "Hostels assigned to admin successfully",
       });
       setAssignDialogOpen(false);
       assignForm.reset();
@@ -295,7 +314,7 @@ export default function AdminsPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Assigned Hostel</TableHead>
+              <TableHead>Assigned Hostels</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -317,7 +336,10 @@ export default function AdminsPage() {
                 <TableRow key={admin.id}>
                   <TableCell>{admin.name}</TableCell>
                   <TableCell>{admin.email}</TableCell>
-                  <TableCell>{admin.hostelName || "Not assigned"}</TableCell>
+                  <TableCell>
+                    {admin.hostels.map((hostel) => hostel.name).join(", ") ||
+                      "Not assigned"}
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
@@ -328,7 +350,7 @@ export default function AdminsPage() {
                           setAssignDialogOpen(true);
                         }}
                       >
-                        Assign Hostel
+                        Assign Hostels
                       </Button>
                       <Button
                         variant="destructive"
@@ -346,12 +368,21 @@ export default function AdminsPage() {
         </Table>
       </div>
 
-      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent>
+      <Dialog
+        open={assignDialogOpen}
+        onOpenChange={(open) => {
+          setAssignDialogOpen(open);
+          if (!open) {
+            assignForm.reset({ hostelIds: [] });
+            setSelectedAdmin(null);
+          }
+        }}
+      >
+        <DialogContent onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>Assign Hostel to Admin</DialogTitle>
+            <DialogTitle>Assign Hostels to Admin</DialogTitle>
             <DialogDescription>
-              Select a hostel to assign to {selectedAdmin?.name}
+              Select hostels to assign to {selectedAdmin?.name}
             </DialogDescription>
           </DialogHeader>
           <Form {...assignForm}>
@@ -361,29 +392,82 @@ export default function AdminsPage() {
             >
               <FormField
                 control={assignForm.control}
-                name="hostelId"
+                name="hostelIds"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Select Hostel</FormLabel>
+                    <FormLabel>Select Hostels</FormLabel>
                     <FormControl>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        {...field}
-                      >
-                        <option value="">Select a hostel</option>
-                        {hostels.map((hostel) => (
-                          <option key={hostel.id} value={hostel.id}>
-                            {hostel.name}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="space-y-2">
+                        <Select
+                          onValueChange={(value) => {
+                            const currentValues = field.value || [];
+                            if (!currentValues.includes(value)) {
+                              field.onChange([...currentValues, value]);
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select hostels">
+                              {field.value?.length
+                                ? `${field.value.length} hostels selected`
+                                : "Select hostels"}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {hostels.map((hostel) => (
+                              <SelectItem
+                                key={hostel.id}
+                                value={hostel.id}
+                                className={
+                                  field.value?.includes(hostel.id)
+                                    ? "bg-secondary"
+                                    : ""
+                                }
+                              >
+                                {hostel.name}
+                                {field.value?.includes(hostel.id) && " ✓"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {field.value?.map((hostelId) => {
+                            const hostel = hostels.find(
+                              (h) => h.id === hostelId
+                            );
+                            return hostel ? (
+                              <div
+                                key={hostelId}
+                                className="flex items-center gap-2 bg-secondary px-2 py-1 rounded-md"
+                              >
+                                <span>{hostel.name}</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                                  onClick={() => {
+                                    field.onChange(
+                                      field.value?.filter(
+                                        (id) => id !== hostelId
+                                      )
+                                    );
+                                  }}
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <DialogFooter>
-                <Button type="submit">Assign Hostel</Button>
+                <Button type="submit">Assign Hostels</Button>
               </DialogFooter>
             </form>
           </Form>
