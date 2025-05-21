@@ -12,14 +12,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { HostelDetails } from "@/services/hostel-service";
-import { HostelStatus } from "@/services/hostel-service";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import ImageUpload from "./ImageUpload";
 import LocationPicker from "@/components/LocationPicker";
+import { HostelStatus } from "@prisma/client";
 
-type HostelFormData = Omit<HostelDetails, "id" | "rooms" | "reviews">;
+type HostelFormData = Omit<
+  HostelDetails,
+  "id" | "rooms" | "reviews" | "createdAt" | "updatedAt"
+>;
 
 type HostelFormValues = {
   name: string;
@@ -86,7 +89,7 @@ export default function HostelForm({
       amenities: initialData?.amenities.join(", ") || "",
       images: initialData?.images || [],
       country: initialData?.country || "USA",
-      status: initialData?.status || HostelStatus.ACTIVE,
+      status: initialData?.status ?? HostelStatus.ACTIVE,
       averageRating: initialData?.averageRating || 0,
       reviewCount: initialData?.reviewCount || 0,
       availableRooms: initialData?.availableRooms || 0,
@@ -122,8 +125,8 @@ export default function HostelForm({
       state: data.state,
       zipCode: data.zipCode,
       country: data.country,
-      latitude: data.latitude ? parseFloat(data.latitude) : undefined,
-      longitude: data.longitude ? parseFloat(data.longitude) : undefined,
+      latitude: parseFloat(data.latitude ?? "0"),
+      longitude: parseFloat(data.longitude ?? "0"),
       amenities: data.amenities.split(",").map((item) => item.trim()),
       images: data.images,
       status: data.status,

@@ -14,7 +14,7 @@ export const setUserCookie = (userData: UserCookie) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    expires: 7, // 7 days
+    expires: 1, // 7 days
   });
 };
 

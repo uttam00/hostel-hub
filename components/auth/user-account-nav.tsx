@@ -13,11 +13,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { User, LogOut, Settings, Building } from "lucide-react";
-import type { Role } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { useAuth } from "@/hooks/use-auth";
 
 export function UserAccountNav() {
-  const router = useRouter();
   const { data: session, status } = useSession();
   const { logout } = useAuth();
   const user = session?.user;
@@ -95,7 +94,10 @@ export function UserAccountNav() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link
-            href={getAdminPath(user.role, "hostels")}
+            href={getAdminPath(
+              user.role,
+              Role.HOSTEL_ADMIN === user.role ? "" : "hostels"
+            )}
             className="flex w-full cursor-pointer"
           >
             {user.role === "STUDENT" ? (

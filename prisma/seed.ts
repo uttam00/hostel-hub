@@ -39,6 +39,16 @@ async function main() {
         role: "SUPER_ADMIN",
       },
     }),
+    prisma.user.upsert({
+      where: { email: "newstudent@example.com" },
+      update: {},
+      create: {
+        name: "New Student",
+        email: "newstudent@example.com",
+        password: hashedPassword,
+        role: "STUDENT",
+      },
+    }),
   ]);
 
   // Create Hostels
@@ -97,6 +107,24 @@ async function main() {
         },
       },
     }),
+    prisma.hostel.create({
+      data: {
+        name: "Urban Nest",
+        description: "Premium hostel in downtown",
+        address: "321 City Plaza",
+        city: "San Francisco",
+        state: "CA",
+        zipCode: "94103",
+        country: "USA",
+        latitude: 37.7749,
+        longitude: -122.4194,
+        amenities: ["WiFi", "Gym", "Pool", "Rooftop Lounge"],
+        images: ["image7.jpg", "image8.jpg"],
+        admins: {
+          connect: [{ id: users[1].id }],
+        },
+      },
+    }),
   ]);
 
   // Create Rooms
@@ -134,6 +162,28 @@ async function main() {
         hostelId: hostels[1].id,
       },
     }),
+    prisma.room.create({
+      data: {
+        roomNumber: "301",
+        roomType: "SINGLE",
+        description: "Quiet room with city view",
+        price: 550.0,
+        capacity: 1,
+        amenities: ["WiFi", "Desk", "City View"],
+        hostelId: hostels[2].id,
+      },
+    }),
+    prisma.room.create({
+      data: {
+        roomNumber: "302",
+        roomType: "DOUBLE",
+        description: "Spacious room with balcony",
+        price: 900.0,
+        capacity: 2,
+        amenities: ["WiFi", "Desk", "Balcony", "AC"],
+        hostelId: hostels[3].id,
+      },
+    }),
   ]);
 
   // Create Bookings
@@ -158,6 +208,16 @@ async function main() {
         roomId: rooms[1].id,
       },
     }),
+    prisma.booking.create({
+      data: {
+        checkIn: new Date("2024-04-01"),
+        checkOut: new Date("2024-08-01"),
+        status: "CONFIRMED",
+        totalPrice: 2200.0,
+        userId: users[3].id,
+        roomId: rooms[2].id,
+      },
+    }),
   ]);
 
   // Create Payments
@@ -178,6 +238,14 @@ async function main() {
         bookingId: bookings[1].id,
       },
     }),
+    prisma.payment.create({
+      data: {
+        amount: 2200.0,
+        status: "COMPLETED",
+        method: "UPI",
+        bookingId: bookings[2].id,
+      },
+    }),
   ]);
 
   // Create Reviews
@@ -196,6 +264,22 @@ async function main() {
         comment: "Good facilities but a bit noisy",
         userId: users[0].id,
         hostelId: hostels[1].id,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        rating: 3,
+        comment: "Average experience. Food could be better.",
+        userId: users[3].id,
+        hostelId: hostels[2].id,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        rating: 5,
+        comment: "Amazing amenities and clean environment!",
+        userId: users[3].id,
+        hostelId: hostels[3].id,
       },
     }),
   ]);

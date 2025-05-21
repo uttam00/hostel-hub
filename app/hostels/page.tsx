@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import HostelCard from "@/app/components/HostelCard";
+import HostelCard from "@/components/HostelCard";
 import { Button } from "@/components/ui/button";
 import {
   Card,

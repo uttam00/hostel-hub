@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import HostelForm from "@/app/components/HostelForm";
+import HostelForm from "@/components/HostelForm";
 import { createHostel } from "@/services/hostel-service";
 import { toast } from "sonner";
 
