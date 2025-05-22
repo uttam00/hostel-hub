@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import HostelForm from "@/components/HostelForm";
 import { getHostelById, updateHostel } from "@/services/hostel-service";
 import { toast } from "sonner";
 
-export default function EditHostelPage({ params }: { params: { id: string } }) {
+export default function EditHostelPage() {
   const router = useRouter();
+  const params: { id: string } = useParams(); // <-- use this
   const [hostel, setHostel] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 

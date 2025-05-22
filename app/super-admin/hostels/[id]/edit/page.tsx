@@ -1,20 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation"; // <-- useParams
 import HostelForm from "@/components/HostelForm";
 import { getHostelById, updateHostel } from "@/services/hostel-service";
 import { toast } from "sonner";
 
-export default function EditHostelPage({ params }: { params: { id: string } }) {
+export default function EditHostelPage() {
   const router = useRouter();
+  const params: { id: string }  = useParams(); // <-- use this
   const [hostel, setHostel] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!params?.id) return;
+
     const fetchHostel = async () => {
       try {
-        const data = await getHostelById(params.id);
+        const data = await getHostelById(params.id); // cast to string
         setHostel(data);
       } catch (error) {
         console.error("Error fetching hostel:", error);
@@ -25,7 +28,7 @@ export default function EditHostelPage({ params }: { params: { id: string } }) {
     };
 
     fetchHostel();
-  }, [params.id]);
+  }, [params]);
 
   const handleSubmit = async (data: any) => {
     try {

@@ -14,7 +14,7 @@ export default async function AdminDashboard() {
 
   return (
     <div className="container mx-auto py-8">
-      <HostelManagement hostels={hostels} />
+      <HostelManagement hostels={hostels} userRole={user.role} />
     </div>
   );
 }
