@@ -109,10 +109,7 @@ export function UserAccountNav() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link
-            href={getAdminPath(user.role, "profile")}
-            className="flex w-full cursor-pointer"
-          >
+          <Link href="/profile" className="flex w-full cursor-pointer">
             <User className="mr-2 h-4 w-4" />
             Profile
           </Link>
