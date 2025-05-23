@@ -53,6 +53,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { adminApi, hostelApi } from "@/services/api";
 
 interface Admin {
   id: string;
@@ -129,12 +130,9 @@ export default function AdminsPage() {
 
   const fetchHostels = async () => {
     try {
-      const response = await fetch("/api/super-admin/hostels");
-      const { hostels } = await response.json();
-
-      console.log({ hostels });
+      const response = await hostelApi.getAll();
       setHostels(
-        hostels.filter(
+        response.data.filter(
           (hostel: Hostel) => hostel.status === HostelStatus.ACTIVE
         )
       );
@@ -154,18 +152,7 @@ export default function AdminsPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const response = await fetch("/api/super-admin/admins", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to create admin");
-      }
+      await adminApi.create(values);
 
       toast({
         title: "Success",

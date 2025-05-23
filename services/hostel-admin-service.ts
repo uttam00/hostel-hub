@@ -1,3 +1,5 @@
+import { adminApi } from "./api";
+
 // Types
 export type HostelAdmin = {
   id: string;
@@ -5,6 +7,7 @@ export type HostelAdmin = {
   email: string | null;
   role: string;
   createdAt: string;
+  hostels: Array<{ id: string }>;
 };
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -13,14 +16,10 @@ const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
 export async function getHostelAdmins(
   hostelId: string
 ): Promise<HostelAdmin[]> {
-  const response = await fetch(`${baseUrl}/api/hostels/${hostelId}/admins`);
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to fetch hostel admins");
-  }
-
-  return await response.json();
+  const response = await adminApi.getAll();
+  return response.filter((admin: HostelAdmin) =>
+    admin.hostels.some((hostel) => hostel.id === hostelId)
+  );
 }
 
 // Add an admin to a hostel
@@ -28,18 +27,7 @@ export async function addHostelAdmin(
   hostelId: string,
   userId: string
 ): Promise<void> {
-  const response = await fetch(`/api/hostels/${hostelId}/admins`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ userId }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to add hostel admin");
-  }
+  await adminApi.assignHostel(userId, [hostelId]);
 }
 
 // Remove an admin from a hostel
@@ -47,15 +35,15 @@ export async function removeHostelAdmin(
   hostelId: string,
   userId: string
 ): Promise<void> {
-  const response = await fetch(
-    `/api/hostels/${hostelId}/admins?userId=${userId}`,
-    {
-      method: "DELETE",
-    }
-  );
+  const admin = await adminApi
+    .getAll()
+    .then((admins) => admins.find((a: HostelAdmin) => a.id === userId));
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to remove hostel admin");
+  if (admin) {
+    const remainingHostels = admin.hostels
+      .filter((h: { id: string }) => h.id !== hostelId)
+      .map((h: { id: string }) => h.id);
+
+    await adminApi.assignHostel(userId, remainingHostels);
   }
 }

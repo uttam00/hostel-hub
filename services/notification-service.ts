@@ -1,3 +1,5 @@
+import { notificationApi } from "./api";
+
 export type Notification = {
   id: string;
   title: string;
@@ -7,11 +9,8 @@ export type Notification = {
 };
 
 export async function getUserNotifications(): Promise<Notification[]> {
-  const response = await fetch("/api/notifications");
-  if (!response.ok) {
-    throw new Error("Failed to fetch notifications");
-  }
-  return response.json();
+  const response = await notificationApi.getAll();
+  return response;
 }
 
 export async function markNotificationAsRead(

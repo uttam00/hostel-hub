@@ -1,4 +1,5 @@
 import { BookingDetails } from "./booking-service";
+import { paymentApi } from "./api";
 
 export type Payment = {
   id: string;
@@ -11,11 +12,8 @@ export type Payment = {
 };
 
 export async function getUserPayments(): Promise<Payment[]> {
-  const response = await fetch("/api/payments");
-  if (!response.ok) {
-    throw new Error("Failed to fetch payments");
-  }
-  return response.json();
+  const response = await paymentApi.getAll();
+  return response;
 }
 
 export async function createPayment(

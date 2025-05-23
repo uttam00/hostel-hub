@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { hostelApi } from "./api";
 
 // Types
 export enum HostelStatus {
@@ -92,53 +93,12 @@ export async function getHostels(params?: {
   page?: number;
   limit?: number;
 }): Promise<PaginatedResponse<Hostel>> {
-  const searchParams = new URLSearchParams();
-
-  if (params?.city) searchParams.append("city", params.city);
-  if (params?.page) searchParams.append("page", params.page.toString());
-  if (params?.limit) searchParams.append("limit", params.limit.toString());
-
-  const queryString = searchParams.toString();
-  const url = `${baseUrl}/api/hostels${queryString ? `?${queryString}` : ""}`;
-
-  try {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("Hostel fetch error:", {
-        status: response.status,
-        statusText: response.statusText,
-        errorData,
-      });
-      throw new Error(
-        `Failed to fetch hostels: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-
-    return {
-      data: data.hostels,
-      pagination: data.pagination,
-    };
-  } catch (error) {
-    console.error("Error in getHostels:", error);
-    throw error;
-  }
+  return hostelApi.getAll(params);
 }
 
 // Fetch a single hostel by ID
 export async function getHostelById(id: string): Promise<HostelDetails> {
-  const response = await fetch(`${baseUrl}/api/hostels/${id}`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch hostel");
-  }
-
-  const hostel = await response.json();
-  // hostel.images will contain the array of image URLs
-  return hostel;
+  return hostelApi.getById(id);
 }
 
 // Create a new hostel

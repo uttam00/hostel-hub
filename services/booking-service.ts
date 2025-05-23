@@ -1,3 +1,5 @@
+import { bookingApi } from "./api";
+
 // Types
 export type Booking = {
   id: string;
@@ -94,13 +96,8 @@ export async function getBookings(params?: {
 
 // Fetch a single booking by ID
 export async function getBookingById(id: string): Promise<BookingDetails> {
-  const response = await fetch(`/api/bookings/${id}`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch booking");
-  }
-
-  return await response.json();
+  const response = await bookingApi.getById(id);
+  return response;
 }
 
 // Create a new booking
@@ -200,9 +197,6 @@ export async function getPayments(bookingId: string): Promise<Payment[]> {
 }
 
 export async function getUserBookings(): Promise<BookingDetails[]> {
-  const response = await fetch("/api/bookings/user");
-  if (!response.ok) {
-    throw new Error("Failed to fetch user bookings");
-  }
-  return response.json();
+  const response = await bookingApi.getAll();
+  return response.data;
 }

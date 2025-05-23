@@ -5,6 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import HostelManagement from "@/components/common-in-admin/HostelManagement";
 import { Hostel } from "@/services/hostel-service";
 import { useAuth } from "@/hooks/use-auth";
+import { hostelApi } from "@/services/api";
 
 export default function HostelsPage() {
   const { user } = useAuth();
@@ -15,9 +16,8 @@ export default function HostelsPage() {
   // Fetch hostels data
   const fetchHostels = async () => {
     try {
-      const response = await fetch("/api/hostel-admin/hostels");
-      const data = await response.json();
-      setHostels(data.hostels);
+      const response = await hostelApi.getAll();
+      setHostels(response.data);
     } catch (error) {
       toast({
         title: "Error",
