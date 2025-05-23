@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 export function UserAccountNav() {
   const { data: session, status } = useSession();
+  const { logout } = useAuth();
   const user = session?.user;
 
   if (status === "loading") return null;
