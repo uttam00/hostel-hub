@@ -27,7 +27,7 @@ export function AdminNavigation({ role }: AdminNavigationProps) {
     },
     {
       label: isSuperAdmin ? "Hostel Admins" : "Students",
-      href: `${basePath}/${isSuperAdmin ? "admins" : "student"}`,
+      href: `${basePath}/${isSuperAdmin ? "admins" : "students"}`,
       icon: Users,
     },
   ];
@@ -38,7 +38,14 @@ export function AdminNavigation({ role }: AdminNavigationProps) {
         <Link
           key={label}
           href={href}
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 data-[active=true]:bg-gray-100 data-[active=true]:text-gray-900"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 
+            text-gray-500 transition-all 
+            hover:text-gray-900 dark:text-gray-400 
+            dark:hover:text-white 
+            data-[active=true]:bg-gray-100 
+            data-[active=true]:text-gray-900 
+            dark:data-[active=true]:bg-gray-800 
+            dark:data-[active=true]:text-white"
           data-active={pathname === href}
         >
           <Icon className="h-4 w-4" />

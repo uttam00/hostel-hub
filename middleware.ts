@@ -45,7 +45,11 @@ export default withAuth(
     }
 
     // Handle protected routes
-    if (path.startsWith("/admin") || path.startsWith("/dashboard")) {
+    if (
+      path.startsWith("/dashboard") ||
+      path.startsWith("/hostel-admin") ||
+      path.startsWith("/super-admin")
+    ) {
       // Redirect to login if not authenticated
       if (!token) {
         return NextResponse.redirect(new URL("/auth/login", req.url));
@@ -77,5 +81,11 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/auth/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/admin/:path*",
+    "/auth/:path*",
+    "/hostel-admin/:path*",
+    "/super-admin/:path*",
+  ],
 };

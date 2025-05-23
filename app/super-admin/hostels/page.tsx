@@ -1,6 +1,6 @@
 "use client";
 
-import HostelManagement from "@/components/super-admin/HostelManagement";
+import HostelManagement from "@/components/common-in-admin/HostelManagement";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Hostel } from "@/services/hostel-service";
@@ -33,13 +33,13 @@ export default function HostelsPage() {
     fetchHostels();
   }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <div className="container mx-auto pb-8">
-      <HostelManagement hostels={hostels} userRole={user ? user.role : ""} />
+      <HostelManagement
+        hostels={hostels}
+        userRole={user ? user.role : ""}
+        loading={loading}
+      />
     </div>
   );
 }

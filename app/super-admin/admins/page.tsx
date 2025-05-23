@@ -42,6 +42,17 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { TableLoader } from "@/components/ui/loader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Admin {
   id: string;
@@ -59,7 +70,7 @@ interface Hostel {
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  // password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const assignHostelSchema = z.object({
@@ -67,7 +78,6 @@ const assignHostelSchema = z.object({
 });
 
 export default function AdminsPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [hostels, setHostels] = useState<Hostel[]>([]);
@@ -75,13 +85,15 @@ export default function AdminsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       email: "",
-      password: "",
+      // password: "",
     },
   });
 
@@ -210,8 +222,6 @@ export default function AdminsPage() {
   };
 
   const handleDeleteAdmin = async (adminId: string) => {
-    if (!confirm("Are you sure you want to delete this admin?")) return;
-
     try {
       const response = await fetch(`/api/super-admin/admins/${adminId}`, {
         method: "DELETE",
@@ -226,6 +236,8 @@ export default function AdminsPage() {
         title: "Success",
         description: "Admin deleted successfully",
       });
+      setDeleteDialogOpen(false);
+      setAdminToDelete(null);
       fetchAdmins();
     } catch (error: unknown) {
       toast({
@@ -286,7 +298,7 @@ export default function AdminsPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
+                {/* <FormField
                   control={form.control}
                   name="password"
                   render={({ field }) => (
@@ -298,7 +310,7 @@ export default function AdminsPage() {
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                /> */}
                 <DialogFooter>
                   <Button type="submit">Create Admin</Button>
                 </DialogFooter>
@@ -321,8 +333,8 @@ export default function AdminsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  Loading...
+                <TableCell colSpan={4}>
+                  <TableLoader />
                 </TableCell>
               </TableRow>
             ) : admins.length === 0 ? (
@@ -355,7 +367,10 @@ export default function AdminsPage() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDeleteAdmin(admin.id)}
+                        onClick={() => {
+                          setAdminToDelete(admin);
+                          setDeleteDialogOpen(true);
+                        }}
                       >
                         Delete
                       </Button>
@@ -473,6 +488,37 @@ export default function AdminsPage() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {deleteDialogOpen && (
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                admin
+                {adminToDelete?.hostels.length
+                  ? ` and remove their access to ${
+                      adminToDelete.hostels.length
+                    } hostel${adminToDelete.hostels.length > 1 ? "s" : ""}`
+                  : ""}
+                .
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() =>
+                  adminToDelete && handleDeleteAdmin(adminToDelete.id)
+                }
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }

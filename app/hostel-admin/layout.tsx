@@ -1,11 +1,9 @@
-import { AdminNavigation } from "@/components/admin/AdminNavigation";
+import { AdminNavigation } from "@/components/common-in-admin/AdminNavigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import {
-  Menu
-} from "lucide-react";
+import { Menu } from "lucide-react";
 import { redirect } from "next/navigation";
 
 export default async function HostelAdminLayout({
@@ -33,9 +31,9 @@ export default async function HostelAdminLayout({
     },
   });
 
-  if (!hostel) {
-    redirect("/");
-  }
+  // if (!hostel) {
+  //   redirect("/");
+  // }
 
   return (
     <div className="flex min-h-screen">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import HostelManagement from "@/components/super-admin/HostelManagement";
+import HostelManagement from "@/components/common-in-admin/HostelManagement";
 import { Hostel } from "@/services/hostel-service";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -33,13 +33,13 @@ export default function HostelsPage() {
     fetchHostels();
   }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <div className="container mx-auto pb-8">
-      <HostelManagement hostels={hostels} userRole={user?.role ?? ""} />
+      <HostelManagement
+        hostels={hostels}
+        userRole={user?.role ?? ""}
+        loading={loading}
+      />
     </div>
   );
 }

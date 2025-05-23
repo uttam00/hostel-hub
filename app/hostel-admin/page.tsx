@@ -24,44 +24,46 @@ export default async function HostelAdminDashboard() {
     },
   });
 
-  if (!hostels.length) {
-    redirect("/");
-  }
-
   // For simplicity, we'll use the first hostel
   const hostel = hostels[0];
 
   // Get statistics for the hostel
-  const totalStudents = await prisma.user.count({
-    where: {
-      role: "STUDENT",
-      bookings: {
-        some: {
+  const totalStudents = !hostel
+    ? 0
+    : await prisma.user.count({
+        where: {
+          role: "STUDENT",
+          bookings: {
+            some: {
+              room: {
+                hostelId: hostel.id,
+              },
+            },
+          },
+        },
+      });
+
+  const totalBookings = !hostel
+    ? 0
+    : await prisma.booking.count({
+        where: {
           room: {
             hostelId: hostel.id,
           },
         },
-      },
-    },
-  });
+      });
 
-  const totalBookings = await prisma.booking.count({
-    where: {
-      room: {
-        hostelId: hostel.id,
-      },
-    },
-  });
-
-  const totalPayments = await prisma.payment.count({
-    where: {
-      booking: {
-        room: {
-          hostelId: hostel.id,
+  const totalPayments = !hostel
+    ? 0
+    : await prisma.payment.count({
+        where: {
+          booking: {
+            room: {
+              hostelId: hostel.id,
+            },
+          },
         },
-      },
-    },
-  });
+      });
 
   const cardData = [
     {

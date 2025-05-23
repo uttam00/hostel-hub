@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { AdminNavigation } from "@/components/admin/AdminNavigation";
+import { AdminNavigation } from "@/components/common-in-admin/AdminNavigation";
 
 export default async function SuperAdminLayout({
   children,
@@ -22,10 +22,13 @@ export default async function SuperAdminLayout({
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-6 w-6" />
+            <Menu className="h-6 w-6 text-gray-900 dark:text-white" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-[300px] p-0">
+        <SheetContent
+          side="left"
+          className="w-[300px] p-0 bg-gray-50/40 dark:bg-gray-900"
+        >
           <div className="flex h-full flex-col">
             <div className="flex-1 overflow-auto py-2">
               <AdminNavigation role={user.role} />
@@ -35,7 +38,7 @@ export default async function SuperAdminLayout({
       </Sheet>
 
       {/* Sidebar */}
-      <div className="hidden w-64 border-r bg-gray-50/40 md:block">
+      <div className="hidden w-64 border-r bg-gray-50/40 dark:bg-gray-900 md:block">
         <div className="flex h-full flex-col">
           <div className="flex-1 overflow-auto py-2">
             <AdminNavigation role={user.role} />
