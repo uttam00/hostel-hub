@@ -80,9 +80,9 @@ export function LoginForm() {
         if (userData.role === "STUDENT") {
           router.push("/dashboard");
         } else if (userData.role === "SUPER_ADMIN") {
-          router.push("/admin");
+          router.push("/super-admin");
         } else if (userData.role === "HOSTEL_ADMIN") {
-          router.push("/admin/hostels");
+          router.push("/hostel-admin");
         }
         router.refresh();
       }

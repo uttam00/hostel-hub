@@ -41,9 +41,9 @@ export default function DashboardPage() {
     ) {
       // Redirect non-student users to their appropriate dashboard
       if (session.user.role === "SUPER_ADMIN") {
-        router.push("/admin");
+        router.push("/super-admin");
       } else if (session.user.role === "HOSTEL_ADMIN") {
-        router.push("/admin/hostels");
+        router.push("/hostel-admin/hostels");
       }
     }
   }, [status, router, session]);
