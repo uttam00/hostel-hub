@@ -67,7 +67,7 @@ export default function HostelManagement({
 
   const handleRemoveAdmin = async (hostelId: string, adminId: string) => {
     try {
-      await adminApi.unassignHostel(adminId, [hostelId]);
+      await adminApi.unassignHostel(adminId, hostelId);
       toast.success("Admin removed successfully");
       fetchHostelAdmins(hostelId);
     } catch (error) {
@@ -198,7 +198,9 @@ export default function HostelManagement({
                               </div>
 
                               <div className="space-y-2">
-                                <Label>Current Admins</Label>
+                                <Label>
+                                  {selectedHostel?.name}'s Current Admins
+                                </Label>
                                 <Table>
                                   <TableHeader>
                                     <TableRow>

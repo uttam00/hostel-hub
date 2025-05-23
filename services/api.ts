@@ -135,7 +135,7 @@ export const adminApi = {
 
   getByHostel: async (hostelId: string) => {
     const response = await fetch(
-      `${getBaseUrl()}/api/admins?hostelId=${hostelId}`
+      `${getBaseUrl()}/api/super-admin/admins?hostelId=${hostelId}`
     );
     if (!response.ok) {
       throw new Error("Failed to fetch hostel admins");
@@ -187,18 +187,18 @@ export const adminApi = {
     return response.json();
   },
 
-  // unassignHostel: async (adminId: string, hostelId: string) => {
-  //   const response = await fetch(
-  //     `${getBaseUrl()}/api/super-admin/admins/${adminId}/assign-hostel/${hostelId}`,
-  //     {
-  //       method: "DELETE",
-  //     }
-  //   );
-  //   if (!response.ok) {
-  //     throw new Error("Failed to unassign hostel");
-  //   }
-  //   return response.json();
-  // },
+  unassignHostel: async (adminId: string, hostelId: string) => {
+    const response = await fetch(
+      `${getBaseUrl()}/api/super-admin/admins/${adminId}/assign-hostel/${hostelId}`,
+      {
+        method: "DELETE",
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Failed to unassign hostel");
+    }
+    return response.json();
+  },
 };
 
 // Booking APIs

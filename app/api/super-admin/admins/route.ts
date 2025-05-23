@@ -104,10 +104,8 @@ export async function POST(req: Request) {
       <p>The Team</p>
     `,
     };
-    console.log({ msg });
-
-    const res = await sgMail.send(msg);
-    console.log({ res, msg });
+    
+    await sgMail.send(msg);
     return NextResponse.json(admin);
   } catch (error) {
     console.error("[ADMINS_POST]", error);

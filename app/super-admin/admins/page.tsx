@@ -11,6 +11,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Command, CommandItem } from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -31,12 +33,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { TableLoader } from "@/components/ui/loader";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -76,6 +76,7 @@ export default function AdminsPage() {
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
+  const [assignHostelLoading, setAssignHostelLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -161,6 +162,7 @@ export default function AdminsPage() {
   const onAssignHostel = async (values: z.infer<typeof assignHostelSchema>) => {
     if (!selectedAdmin) return;
 
+    setAssignHostelLoading(true);
     try {
       await adminApi.assignHostel(selectedAdmin.id, values.hostelIds);
 
@@ -178,6 +180,8 @@ export default function AdminsPage() {
           error instanceof Error ? error.message : "Something went wrong",
         variant: "destructive",
       });
+    } finally {
+      setAssignHostelLoading(false);
     }
   };
 
@@ -203,12 +207,12 @@ export default function AdminsPage() {
   };
 
   return (
-    <div className="container mx-auto pb-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold">Manage Hostel Admins</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Add New Admin
             </Button>
@@ -273,14 +277,14 @@ export default function AdminsPage() {
         </Dialog>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Assigned Hostels</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="min-w-[150px]">Name</TableHead>
+              <TableHead className="min-w-[200px]">Email</TableHead>
+              <TableHead className="min-w-[200px]">Assigned Hostels</TableHead>
+              <TableHead className="min-w-[200px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -299,17 +303,20 @@ export default function AdminsPage() {
             ) : (
               admins.map((admin) => (
                 <TableRow key={admin.id}>
-                  <TableCell>{admin.name}</TableCell>
-                  <TableCell>{admin.email}</TableCell>
-                  <TableCell>
-                    {admin.hostels.map((hostel) => hostel.name).join(", ") ||
-                      "Not assigned"}
+                  <TableCell className="font-medium">{admin.name}</TableCell>
+                  <TableCell className="break-all">{admin.email}</TableCell>
+                  <TableCell className="max-w-[200px]">
+                    <div className="truncate">
+                      {admin.hostels.map((hostel) => hostel.name).join(", ") ||
+                        "Not assigned"}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button
                         variant="outline"
                         size="sm"
+                        className="w-full sm:w-auto"
                         onClick={() => {
                           setSelectedAdmin(admin);
                           setAssignDialogOpen(true);
@@ -320,6 +327,7 @@ export default function AdminsPage() {
                       <Button
                         variant="destructive"
                         size="sm"
+                        className="w-full sm:w-auto"
                         onClick={() => {
                           setAdminToDelete(admin);
                           setDeleteDialogOpen(true);
@@ -346,7 +354,7 @@ export default function AdminsPage() {
           }
         }}
       >
-        <DialogContent onInteractOutside={(e) => e.preventDefault()}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Assign Hostels to Admin</DialogTitle>
             <DialogDescription>
@@ -366,76 +374,94 @@ export default function AdminsPage() {
                     <FormLabel>Select Hostels</FormLabel>
                     <FormControl>
                       <div className="space-y-2">
-                        <Select
-                          onValueChange={(value) => {
-                            const currentValues = field.value || [];
-                            if (!currentValues.includes(value)) {
-                              field.onChange([...currentValues, value]);
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select hostels">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start"
+                            >
                               {field.value?.length
                                 ? `${field.value.length} hostels selected`
                                 : "Select hostels"}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {hostels.map((hostel) => (
-                              <SelectItem
-                                key={hostel.id}
-                                value={hostel.id}
-                                className={
-                                  field.value?.includes(hostel.id)
-                                    ? "bg-secondary"
-                                    : ""
-                                }
-                              >
-                                {hostel.name}
-                                {field.value?.includes(hostel.id) && " ✓"}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <div className="flex flex-wrap gap-2 mt-2">
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] max-h-[300px] overflow-y-auto p-0">
+                            <Command>
+                              {hostels.map((hostel) => {
+                                const isChecked = field.value?.includes(
+                                  hostel.id
+                                );
+                                return (
+                                  <CommandItem
+                                    key={hostel.id}
+                                    onSelect={() => {
+                                      const newValue = isChecked
+                                        ? field.value?.filter(
+                                            (id) => id !== hostel.id
+                                          )
+                                        : [...(field.value || []), hostel.id];
+                                      field.onChange(newValue);
+                                    }}
+                                  >
+                                    <Checkbox
+                                      checked={isChecked}
+                                      className="mr-2"
+                                    />
+                                    {hostel.name}
+                                  </CommandItem>
+                                );
+                              })}
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        {/* ✅ Display selected hostels as badges */}
+                        <div className="flex flex-wrap gap-2">
                           {field.value?.map((hostelId) => {
                             const hostel = hostels.find(
                               (h) => h.id === hostelId
                             );
-                            return hostel ? (
-                              <div
-                                key={hostelId}
-                                className="flex items-center gap-2 bg-secondary px-2 py-1 rounded-md"
-                              >
-                                <span>{hostel.name}</span>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                                  onClick={() => {
-                                    field.onChange(
-                                      field.value?.filter(
-                                        (id) => id !== hostelId
-                                      )
-                                    );
-                                  }}
+                            return (
+                              hostel && (
+                                <div
+                                  key={hostelId}
+                                  className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
                                 >
-                                  ×
-                                </Button>
-                              </div>
-                            ) : null;
+                                  <span>{hostel.name}</span>
+                                  {/* for uncheck selected hostel */}
+                                  {/* <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                                    onClick={() =>
+                                      field.onChange(
+                                        field.value.filter(
+                                          (id) => id !== hostelId
+                                        )
+                                      )
+                                    }
+                                  >
+                                    ×
+                                  </Button> */}
+                                </div>
+                              )
+                            );
                           })}
                         </div>
-                      </div>
+                      </div>  
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <DialogFooter>
-                <Button type="submit">Assign Hostels</Button>
+                <Button
+                  type="submit"
+                  disabled={assignHostelLoading}
+                  className="w-full sm:w-auto"
+                >
+                  {assignHostelLoading ? "Assigning..." : "Assign Hostels"}
+                </Button>
               </DialogFooter>
             </form>
           </Form>
@@ -444,7 +470,7 @@ export default function AdminsPage() {
 
       {deleteDialogOpen && (
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
+          <AlertDialogContent className="sm:max-w-[425px]">
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
@@ -458,13 +484,15 @@ export default function AdminsPage() {
                 .
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+              <AlertDialogCancel className="w-full sm:w-auto">
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction
                 onClick={() =>
                   adminToDelete && handleDeleteAdmin(adminToDelete.id)
                 }
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Delete
               </AlertDialogAction>
