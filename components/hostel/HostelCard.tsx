@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { Hostel } from "@/services/hostel-service";
+import { Hostel } from "@/types";
 import { Building, MapPin, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";

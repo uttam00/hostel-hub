@@ -3,7 +3,8 @@
 import HostelManagement from "@/components/common-in-admin/HostelManagement";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Hostel } from "@/services/hostel-service";
+import { hostelApi } from "@/services/api";
+import { Hostel } from "@/types";
 import { useEffect, useState } from "react";
 
 export default function HostelsPage() {
@@ -15,9 +16,8 @@ export default function HostelsPage() {
   // Fetch hostels data
   const fetchHostels = async () => {
     try {
-      const response = await fetch("/api/super-admin/hostels");
-      const data = await response.json();
-      setHostels(data.hostels);
+      const response = await hostelApi.getAll();
+      setHostels(response.data);
     } catch (error) {
       toast({
         title: "Error",

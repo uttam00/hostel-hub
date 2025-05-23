@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import HostelManagement from "@/components/common-in-admin/HostelManagement";
-import { Hostel } from "@/services/hostel-service";
+import { Hostel } from "@/types";
 import { useAuth } from "@/hooks/use-auth";
 import { hostelApi } from "@/services/api";
 

@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +29,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { TableLoader } from "@/components/ui/loader";
 import {
   Select,
   SelectContent,
@@ -35,38 +46,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
+import { adminApi, hostelApi } from "@/services/api";
+import { Hostel, HostelAdmin, HostelStatus } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { HostelStatus } from "@prisma/client";
 import { Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { TableLoader } from "@/components/ui/loader";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { adminApi, hostelApi } from "@/services/api";
 
-interface Admin {
-  id: string;
-  name: string;
-  email: string;
-  hostels: Array<{ id: string; name: string }>;
-}
-
-interface Hostel {
-  id: string;
-  name: string;
-  status: string;
-}
+interface Admin extends HostelAdmin {}
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -114,9 +102,8 @@ export default function AdminsPage() {
 
   const fetchAdmins = async () => {
     try {
-      const response = await fetch("/api/super-admin/admins");
-      const data = await response.json();
-      setAdmins(data);
+      const response = await adminApi.getAll();
+      setAdmins(response);
     } catch (error) {
       toast({
         title: "Error",
@@ -175,21 +162,7 @@ export default function AdminsPage() {
     if (!selectedAdmin) return;
 
     try {
-      const response = await fetch(
-        `/api/super-admin/admins/${selectedAdmin.id}/assign-hostel`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(values),
-        }
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to assign hostels");
-      }
+      await adminApi.assignHostel(selectedAdmin.id, values.hostelIds);
 
       toast({
         title: "Success",
@@ -210,14 +183,7 @@ export default function AdminsPage() {
 
   const handleDeleteAdmin = async (adminId: string) => {
     try {
-      const response = await fetch(`/api/super-admin/admins/${adminId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to delete admin");
-      }
+      await adminApi.delete(adminId);
 
       toast({
         title: "Success",

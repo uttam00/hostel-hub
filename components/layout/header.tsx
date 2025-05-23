@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Building } from "lucide-react";
 import { UserAccountNav } from "@/components/auth/user-account-nav";
 import { useSession } from "next-auth/react";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export function Header() {
   const { data: session } = useSession();

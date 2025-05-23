@@ -1,12 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import type { HostelDetails } from "@/services/hostel-service";
-import { getHostelById } from "@/services/hostel-service";
+import { hostelApi } from "@/services/api";
+import { HostelDetails } from "@/types";
 import { Star } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import HostelMap from "@/components/HostelMap";
+import HostelMap from "@/components/hostel/HostelMap";
 import Image from "next/image";
 
 export default function HostelDetailPage() {
@@ -31,7 +31,7 @@ export default function HostelDetailPage() {
 
       try {
         setLoading(true);
-        const data = await getHostelById(hostelId);
+        const data = await hostelApi.getById(hostelId);
         setHostel(data);
         setError(null);
       } catch (err) {

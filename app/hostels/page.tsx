@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import HostelCard from "@/components/HostelCard";
+import HostelCard from "@/components/hostel/HostelCard";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getHostels, type Hostel } from "@/services/hostel-service";
+import { hostelApi } from "@/services/api";
+import { Hostel } from "@/types";
 import { Filter, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -37,7 +38,7 @@ export default function HostelsPage() {
     const fetchHostels = async () => {
       try {
         setLoading(true);
-        const response = await getHostels({
+        const response = await hostelApi.getAll({
           city: searchCity || undefined,
           page: currentPage,
           limit: 6,

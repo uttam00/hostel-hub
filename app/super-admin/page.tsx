@@ -1,6 +1,6 @@
 import DashboardCard from "@/components/dashboardCard";
 import { getCurrentUser } from "@/lib/auth";
-import { getHostels } from "@/services/hostel-service";
+import { hostelApi } from "@/services/api";
 import { Building, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -12,7 +12,7 @@ export default async function SuperAdminDashboard() {
     redirect("/");
   }
 
-  const { data: hostels } = await getHostels();
+  const { data: hostels } = await hostelApi.getAll();
   const totalHostels = hostels.length;
   const totalAdmins = hostels.reduce(
     (acc, hostel) => acc + (hostel.admins?.length || 0),

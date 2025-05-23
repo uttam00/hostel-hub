@@ -11,11 +11,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { HostelDetails } from "@/services/hostel-service";
+import { HostelDetails } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import ImageUpload from "./ImageUpload";
+import ImageUpload from "../ImageUpload";
 import LocationPicker from "@/components/LocationPicker";
 import { HostelStatus } from "@prisma/client";
 

@@ -18,13 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  HostelAdmin,
-  addHostelAdmin,
-  getHostelAdmins,
-  removeHostelAdmin,
-} from "@/services/hostel-admin-service";
-import { Hostel } from "@/services/hostel-service";
+import { adminApi } from "@/services/api";
+import { Hostel, HostelAdmin } from "@/types";
 import { Role } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -49,49 +44,41 @@ export default function HostelManagement({
   const [newAdminId, setNewAdminId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchAdmins = async (hostelId: string) => {
+  const fetchHostelAdmins = async (hostelId: string) => {
     try {
-      const hostelAdmins = await getHostelAdmins(hostelId);
-      setAdmins(hostelAdmins);
+      const response = await adminApi.getByHostel(hostelId);
+      setAdmins(response);
     } catch (error) {
+      console.error("Error fetching hostel admins:", error);
       toast.error("Failed to fetch hostel admins");
     }
   };
 
-  const handleAddAdmin = async () => {
-    if (!selectedHostel || !newAdminId) return;
-
-    setIsLoading(true);
+  const handleAddAdmin = async (hostelId: string, adminId: string) => {
     try {
-      await addHostelAdmin(selectedHostel.id, newAdminId);
-      await fetchAdmins(selectedHostel.id);
-      setNewAdminId("");
+      await adminApi.assignHostel(adminId, [hostelId]);
       toast.success("Admin added successfully");
+      fetchHostelAdmins(hostelId);
     } catch (error) {
+      console.error("Error adding admin:", error);
       toast.error("Failed to add admin");
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleRemoveAdmin = async (userId: string) => {
-    if (!selectedHostel) return;
-
-    setIsLoading(true);
+  const handleRemoveAdmin = async (hostelId: string, adminId: string) => {
     try {
-      await removeHostelAdmin(selectedHostel.id, userId);
-      await fetchAdmins(selectedHostel.id);
+      await adminApi.unassignHostel(adminId, [hostelId]);
       toast.success("Admin removed successfully");
+      fetchHostelAdmins(hostelId);
     } catch (error) {
+      console.error("Error removing admin:", error);
       toast.error("Failed to remove admin");
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleViewAdmins = (hostel: Hostel) => {
     setSelectedHostel(hostel);
-    fetchAdmins(hostel.id);
+    fetchHostelAdmins(hostel.id);
   };
 
   return (
@@ -200,7 +187,9 @@ export default function HostelManagement({
                                     placeholder="Enter user ID"
                                   />
                                   <Button
-                                    onClick={handleAddAdmin}
+                                    onClick={() =>
+                                      handleAddAdmin(hostel.id, newAdminId)
+                                    }
                                     disabled={isLoading || !newAdminId}
                                   >
                                     Add
@@ -228,7 +217,10 @@ export default function HostelManagement({
                                             variant="destructive"
                                             size="sm"
                                             onClick={() =>
-                                              handleRemoveAdmin(admin.id)
+                                              handleRemoveAdmin(
+                                                hostel.id,
+                                                admin.id
+                                              )
                                             }
                                             disabled={isLoading}
                                           >

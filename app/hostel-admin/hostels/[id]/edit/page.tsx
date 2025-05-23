@@ -2,20 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import HostelForm from "@/components/HostelForm";
-import { getHostelById, updateHostel } from "@/services/hostel-service";
+import HostelForm from "@/components/hostel/HostelForm";
+import { hostelApi } from "@/services/api";
 import { toast } from "sonner";
 
 export default function EditHostelPage() {
   const router = useRouter();
-  const params: { id: string } = useParams(); // <-- use this
+  const params: { id: string } = useParams();
   const [hostel, setHostel] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchHostel = async () => {
       try {
-        const data = await getHostelById(params.id);
+        const data = await hostelApi.getById(params.id);
         setHostel(data);
       } catch (error) {
         console.error("Error fetching hostel:", error);
@@ -30,9 +30,9 @@ export default function EditHostelPage() {
 
   const handleSubmit = async (data: any) => {
     try {
-      await updateHostel(params.id, data);
+      await hostelApi.update(params.id, data);
       toast.success("Hostel updated successfully");
-      router.push("/super-admin/hostels");
+      router.push("/hostel-admin/hostels");
     } catch (error) {
       console.error("Error updating hostel:", error);
       toast.error("Failed to update hostel");

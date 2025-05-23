@@ -15,12 +15,8 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
-import { getUserBookings } from "@/services/booking-service";
-import { getUserPayments } from "@/services/payment-service";
-import { getUserNotifications } from "@/services/notification-service";
-import type { BookingDetails } from "@/services/booking-service";
-import type { Payment } from "@/services/payment-service";
-import type { Notification } from "@/services/notification-service";
+import { bookingApi, paymentApi, notificationApi } from "@/services/api";
+import { BookingDetails, Payment, Notification } from "@/types";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -54,11 +50,11 @@ export default function DashboardPage() {
         setLoading(true);
         const [bookingsResponse, paymentsResponse, notificationsResponse] =
           await Promise.all([
-            getUserBookings(),
-            getUserPayments(),
-            getUserNotifications(),
+            bookingApi.getAll({ status: "ACTIVE" }),
+            paymentApi.getAll(),
+            notificationApi.getAll(),
           ]);
-        setBookings(bookingsResponse);
+        setBookings(bookingsResponse.data);
         setPayments(paymentsResponse);
         setNotifications(notificationsResponse);
       } catch (error) {
@@ -412,7 +408,8 @@ export default function DashboardPage() {
                       {payments
                         .filter(
                           (payment) =>
-                            new Date(payment.dueDate) > new Date() &&
+                            payment.dueDate &&
+                            new Date(payment.dueDate as string) > new Date() &&
                             !payment.paid
                         )
                         .map((payment) => (
@@ -425,16 +422,20 @@ export default function DashboardPage() {
                                 <h4 className="font-medium">
                                   {payment.description}
                                 </h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {payment.booking.room.hostel.name}, Room{" "}
-                                  {payment.booking.room.roomNumber}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  Due on:{" "}
-                                  {new Date(
-                                    payment.dueDate
-                                  ).toLocaleDateString()}
-                                </p>
+                                {payment.booking?.room?.hostel && (
+                                  <p className="text-sm text-muted-foreground">
+                                    {payment.booking.room.hostel.name}, Room{" "}
+                                    {payment.booking.room.roomNumber}
+                                  </p>
+                                )}
+                                {payment.dueDate && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Due on:{" "}
+                                    {new Date(
+                                      payment.dueDate as string
+                                    ).toLocaleDateString()}
+                                  </p>
+                                )}
                               </div>
                               <div className="flex flex-col gap-2 md:items-end">
                                 <p className="text-sm font-medium">
@@ -476,10 +477,12 @@ export default function DashboardPage() {
                               <p className="font-medium">
                                 {payment.description}
                               </p>
-                              <p className="text-sm text-muted-foreground">
-                                {payment.booking.room.hostel.name}, Room{" "}
-                                {payment.booking.room.roomNumber}
-                              </p>
+                              {payment.booking?.room?.hostel && (
+                                <p className="text-sm text-muted-foreground">
+                                  {payment.booking.room.hostel.name}, Room{" "}
+                                  {payment.booking.room.roomNumber}
+                                </p>
+                              )}
                             </div>
                             <div className="text-right">
                               <p className="font-medium">

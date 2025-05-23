@@ -1,27 +1,28 @@
-import { Role } from "@prisma/client";
+import { PaginatedResponse } from "@/types";
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
-
-// Types
-export type PaginatedResponse<T> = {
-  data: T[];
-  pagination: {
-    total: number;
-    pages: number;
-    page: number;
-    limit: number;
-  };
+// Base URL for API calls - changes based on environment
+const getBaseUrl = () => {
+  if (typeof window !== "undefined") {
+    // Client-side: use relative URL
+    return "";
+  }
+  // Server-side: use absolute URL
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 };
 
 // Auth APIs
 export const authApi = {
   login: async (credentials: { email: string; password: string }) => {
-    const response = await fetch("/api/auth/login", {
+    const response = await fetch(`${getBaseUrl()}/api/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(credentials),
     });
-    if (!response.ok) throw new Error("Login failed");
+    if (!response.ok) {
+      throw new Error("Failed to login");
+    }
     return response.json();
   },
 
@@ -30,7 +31,7 @@ export const authApi = {
     email: string;
     password: string;
   }) => {
-    const response = await fetch("/api/auth/register", {
+    const response = await fetch(`${getBaseUrl()}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
@@ -53,7 +54,9 @@ export const hostelApi = {
     if (params?.limit) searchParams.append("limit", params.limit.toString());
 
     const queryString = searchParams.toString();
-    const url = `${baseUrl}/api/hostels${queryString ? `?${queryString}` : ""}`;
+    const url = `${getBaseUrl()}/api/hostels${
+      queryString ? `?${queryString}` : ""
+    }`;
 
     const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch hostels");
@@ -65,7 +68,7 @@ export const hostelApi = {
   },
 
   getById: async (id: string) => {
-    const response = await fetch(`${baseUrl}/api/hostels/${id}`);
+    const response = await fetch(`${getBaseUrl()}/api/hostels/${id}`);
     if (!response.ok) throw new Error("Failed to fetch hostel");
     return response.json();
   },
@@ -80,7 +83,7 @@ export const hostelApi = {
     country: string;
     amenities: string[];
   }) => {
-    const response = await fetch(`${baseUrl}/api/hostels`, {
+    const response = await fetch(`${getBaseUrl()}/api/hostels`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(hostelData),
@@ -102,7 +105,7 @@ export const hostelApi = {
       amenities: string[];
     }>
   ) => {
-    const response = await fetch(`${baseUrl}/api/hostels/${id}`, {
+    const response = await fetch(`${getBaseUrl()}/api/hostels/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(hostelData),
@@ -112,50 +115,90 @@ export const hostelApi = {
   },
 
   delete: async (id: string) => {
-    const response = await fetch(`${baseUrl}/api/hostels/${id}`, {
+    const response = await fetch(`${getBaseUrl()}/api/hostels/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete hostel");
+    return response.json();
   },
 };
 
 // Admin APIs
 export const adminApi = {
   getAll: async () => {
-    const response = await fetch("/api/super-admin/admins");
-    if (!response.ok) throw new Error("Failed to fetch admins");
+    const response = await fetch(`${getBaseUrl()}/api/super-admin/admins`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch admins");
+    }
+    return response.json();
+  },
+
+  getByHostel: async (hostelId: string) => {
+    const response = await fetch(
+      `${getBaseUrl()}/api/admins?hostelId=${hostelId}`
+    );
+    if (!response.ok) {
+      throw new Error("Failed to fetch hostel admins");
+    }
     return response.json();
   },
 
   create: async (adminData: { name: string; email: string }) => {
-    const response = await fetch("/api/super-admin/admins", {
+    const response = await fetch(`${getBaseUrl()}/api/super-admin/admins`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(adminData),
     });
-    if (!response.ok) throw new Error("Failed to create admin");
+    if (!response.ok) {
+      throw new Error("Failed to create admin");
+    }
     return response.json();
   },
 
   delete: async (adminId: string) => {
-    const response = await fetch(`/api/super-admin/admins/${adminId}`, {
-      method: "DELETE",
-    });
-    if (!response.ok) throw new Error("Failed to delete admin");
+    const response = await fetch(
+      `${getBaseUrl()}/api/super-admin/admins/${adminId}`,
+      {
+        method: "DELETE",
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Failed to delete admin");
+    }
+    return response.json();
   },
 
   assignHostel: async (adminId: string, hostelIds: string[]) => {
     const response = await fetch(
-      `/api/super-admin/admins/${adminId}/assign-hostel`,
+      `${getBaseUrl()}/api/super-admin/admins/${adminId}/assign-hostel`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ hostelIds }),
       }
     );
-    if (!response.ok) throw new Error("Failed to assign hostel");
+    if (!response.ok) {
+      throw new Error("Failed to assign hostel");
+    }
     return response.json();
   },
+
+  // unassignHostel: async (adminId: string, hostelId: string) => {
+  //   const response = await fetch(
+  //     `${getBaseUrl()}/api/super-admin/admins/${adminId}/assign-hostel/${hostelId}`,
+  //     {
+  //       method: "DELETE",
+  //     }
+  //   );
+  //   if (!response.ok) {
+  //     throw new Error("Failed to unassign hostel");
+  //   }
+  //   return response.json();
+  // },
 };
 
 // Booking APIs
@@ -171,7 +214,9 @@ export const bookingApi = {
     if (params?.limit) searchParams.append("limit", params.limit.toString());
 
     const queryString = searchParams.toString();
-    const url = `/api/bookings${queryString ? `?${queryString}` : ""}`;
+    const url = `${getBaseUrl()}/api/bookings${
+      queryString ? `?${queryString}` : ""
+    }`;
 
     const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch bookings");
@@ -183,7 +228,7 @@ export const bookingApi = {
   },
 
   getById: async (id: string) => {
-    const response = await fetch(`/api/bookings/${id}`);
+    const response = await fetch(`${getBaseUrl()}/api/bookings/${id}`);
     if (!response.ok) throw new Error("Failed to fetch booking");
     return response.json();
   },
@@ -194,7 +239,7 @@ export const bookingApi = {
     checkOut: string;
     totalPrice: number;
   }) => {
-    const response = await fetch("/api/bookings", {
+    const response = await fetch(`${getBaseUrl()}/api/bookings`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(bookingData),
@@ -212,7 +257,7 @@ export const bookingApi = {
       totalPrice: number;
     }>
   ) => {
-    const response = await fetch(`/api/bookings/${id}`, {
+    const response = await fetch(`${getBaseUrl()}/api/bookings/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(bookingData),
@@ -222,18 +267,27 @@ export const bookingApi = {
   },
 
   cancel: async (id: string) => {
-    const response = await fetch(`/api/bookings/${id}`, {
-      method: "DELETE",
+    const response = await fetch(`${getBaseUrl()}/api/bookings/${id}/cancel`, {
+      method: "POST",
     });
     if (!response.ok) throw new Error("Failed to cancel booking");
+    return response.json();
   },
 };
 
 // Payment APIs
 export const paymentApi = {
   getAll: async () => {
-    const response = await fetch("/api/payments");
+    const response = await fetch(`${getBaseUrl()}/api/payments`);
     if (!response.ok) throw new Error("Failed to fetch payments");
+    return response.json();
+  },
+
+  getById: async (id: string) => {
+    const response = await fetch(`${getBaseUrl()}/api/payments/${id}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch payment");
+    }
     return response.json();
   },
 
@@ -242,7 +296,7 @@ export const paymentApi = {
     amount: number;
     method: string;
   }) => {
-    const response = await fetch("/api/payments", {
+    const response = await fetch(`${getBaseUrl()}/api/payments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(paymentData),
@@ -250,28 +304,72 @@ export const paymentApi = {
     if (!response.ok) throw new Error("Failed to create payment");
     return response.json();
   },
+
+  update: async (id: string, paymentData: any) => {
+    const response = await fetch(`${getBaseUrl()}/api/payments/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(paymentData),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to update payment");
+    }
+    return response.json();
+  },
 };
 
 // Notification APIs
 export const notificationApi = {
   getAll: async () => {
-    const response = await fetch("/api/notifications");
+    const response = await fetch(`${getBaseUrl()}/api/notifications`);
     if (!response.ok) throw new Error("Failed to fetch notifications");
     return response.json();
   },
 
-  markAsRead: async (notificationId: string) => {
-    const response = await fetch(`/api/notifications/${notificationId}/read`, {
-      method: "PUT",
+  getById: async (id: string) => {
+    const response = await fetch(`${getBaseUrl()}/api/notifications/${id}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch notification");
+    }
+    return response.json();
+  },
+
+  create: async (data: any) => {
+    const response = await fetch(`${getBaseUrl()}/api/notifications`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error("Failed to mark notification as read");
+    if (!response.ok) {
+      throw new Error("Failed to create notification");
+    }
+    return response.json();
+  },
+
+  markAsRead: async (id: string) => {
+    const response = await fetch(
+      `${getBaseUrl()}/api/notifications/${id}/read`,
+      {
+        method: "POST",
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Failed to mark notification as read");
+    }
     return response.json();
   },
 
   delete: async (notificationId: string) => {
-    const response = await fetch(`/api/notifications/${notificationId}`, {
-      method: "DELETE",
-    });
+    const response = await fetch(
+      `${getBaseUrl()}/api/notifications/${notificationId}`,
+      {
+        method: "DELETE",
+      }
+    );
     if (!response.ok) throw new Error("Failed to delete notification");
   },
 };
