@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -18,15 +18,10 @@ import { useAuth } from "@/hooks/use-auth";
 
 export function UserAccountNav() {
   const { data: session, status } = useSession();
-  const { logout } = useAuth();
   const user = session?.user;
 
-  // Show loading state while checking authentication
-  if (status === "loading") {
-    return null;
-  }
+  if (status === "loading") return null;
 
-  // Only show login/signup buttons if not authenticated
   if (!user) {
     return (
       <div className="flex items-center gap-4">
@@ -44,31 +39,40 @@ export function UserAccountNav() {
     );
   }
 
-  // Get initials for avatar fallback
-  const getInitials = (name?: string | null) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitials = (name?: string | null) =>
+    name
+      ? name
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase()
+      : "U";
 
-  const handleSignOut = async () => {
-    await logout();
-  };
+  const getAdminPath = (role: Role, path = "") =>
+    role === "SUPER_ADMIN"
+      ? `/super-admin/${path}`
+      : role === "HOSTEL_ADMIN"
+      ? `/hostel-admin/${path}`
+      : "/dashboard";
 
-  const getAdminPath = (role: Role, path?: string) => {
-    switch (role) {
-      case "SUPER_ADMIN":
-        return `/super-admin/${path}`;
-      case "HOSTEL_ADMIN":
-        return `/hostel-admin/${path}`;
-      default:
-        return "/dashboard";
-    }
-  };
+  const menuItems = [
+    {
+      label: "Dashboard",
+      href: getAdminPath(user.role),
+      icon: user.role === "STUDENT" ? User : Building,
+    },
+    {
+      label: "Profile",
+      href: "/profile",
+      icon: User,
+    },
+    {
+      label: "Settings",
+      href: getAdminPath(user.role, "settings"),
+      icon: Settings,
+    },
+  ];
 
   return (
     <DropdownMenu>
@@ -80,9 +84,10 @@ export function UserAccountNav() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent className="w-56" align="end" forceMount>
-        <div className="flex items-center justify-start gap-2 p-2">
-          <div className="flex flex-col space-y-1 leading-none">
+        <div className="flex items-center gap-2 p-2">
+          <div className="flex flex-col">
             {user.name && <p className="font-medium">{user.name}</p>}
             {user.email && (
               <p className="w-[200px] truncate text-sm text-muted-foreground">
@@ -91,45 +96,29 @@ export function UserAccountNav() {
             )}
           </div>
         </div>
+
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link
-            href={getAdminPath(
-              user.role,
-              Role.HOSTEL_ADMIN === user.role ? "" : "hostels"
-            )}
-            className="flex w-full cursor-pointer"
-          >
-            {user.role === "STUDENT" ? (
-              <User className="mr-2 h-4 w-4" />
-            ) : (
-              <Building className="mr-2 h-4 w-4" />
-            )}
-            Dashboard
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/profile" className="flex w-full cursor-pointer">
-            <User className="mr-2 h-4 w-4" />
-            Profile
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link
-            href={getAdminPath(user.role, "settings")}
-            className="flex w-full cursor-pointer"
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </Link>
-        </DropdownMenuItem>
+
+        {menuItems.map(({ label, href, icon: Icon }) => (
+          <DropdownMenuItem asChild key={label}>
+            <Link
+              href={href}
+              className="flex w-full items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white"
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+
         <DropdownMenuSeparator />
+
         <DropdownMenuItem
-          className="flex w-full cursor-pointer text-red-600"
-          onClick={handleSignOut}
+          onClick={logout}
+          className="flex items-center gap-2 text-red-600 cursor-pointer"
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign out
+          <LogOut className="h-4 w-4" />
+          Sign Out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

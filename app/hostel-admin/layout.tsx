@@ -54,7 +54,7 @@ export default async function HostelAdminLayout({
       </Sheet>
 
       {/* Sidebar */}
-      <div className="hidden w-64 border-r bg-gray-50/40 md:block">
+      <div className="hidden w-64 border-r bg-gray-50/40 dark:bg-gray-900 md:block">
         <div className="flex h-full flex-col">
           <div className="flex-1 overflow-auto py-2">
             <AdminNavigation role={user.role} />
