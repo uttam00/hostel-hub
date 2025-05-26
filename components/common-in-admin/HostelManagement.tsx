@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { TableLoader } from "../ui/loader";
+import { getInitialsFromEmail } from "@/lib/utils";
 
 interface HostelManagementProps {
   hostels: Hostel[];
@@ -70,9 +71,14 @@ export default function HostelManagement({
         await apiCall();
         toast.success(successMessage);
         callback?.();
-      } catch (error) {
-        console.error(errorMessage, error);
-        toast.error(errorMessage);
+      } catch (error: any) {
+        const message =
+          error?.response?.data?.message || // Axios style (if using Axios)
+          error?.message || // Native fetch error
+          errorMessage;
+
+        toast.error(message);
+        console.error(error);
       } finally {
         setState((prev) => ({ ...prev, isFetching: false }));
       }
@@ -96,16 +102,27 @@ export default function HostelManagement({
 
   // Add admin to hostel
   const handleAddAdmin = useCallback(
-    (hostelId: string, adminId: string) => {
-      if (!adminId) return;
-      handleApiCall(
+    async (hostelId: string, adminEmail: string) => {
+      const { initials, isValidEmail } = getInitialsFromEmail(adminEmail);
+      if (!isValidEmail) {
+        toast.error("Please enter a valid email");
+        return;
+      }
+
+      await handleApiCall(
         async () => {
-          await adminApi.assignHostel(adminId, [hostelId]);
+          const createdAdminData = await adminApi.create({
+            name: initials,
+            email: adminEmail,
+          });
+
+          await adminApi.assignHostel(createdAdminData.id, [hostelId]);
           setState((prev) => ({ ...prev, newAdminId: "" }));
+
           await fetchHostelAdmins(hostelId);
           setState((prev) => ({ ...prev, isAdminDialogOpen: false }));
         },
-        "Admin added successfully",
+        "Admin added successfully and assigned to hostel",
         "Failed to add admin"
       );
     },
@@ -315,7 +332,7 @@ export default function HostelManagement({
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {loading ? (
+                                    {state.isFetching ? (
                                       <TableRow>
                                         <TableCell colSpan={3}>
                                           <TableLoader />

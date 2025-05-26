@@ -153,9 +153,13 @@ export const adminApi = {
       },
       body: JSON.stringify(adminData),
     });
+
+    const data = await response.text(); // Use .text() first to safely parse
+
     if (!response.ok) {
-      throw new Error("Failed to create admin");
+      throw new Error(data); // This will be "Email already exists" or any custom text
     }
+
     return response.json();
   },
 
