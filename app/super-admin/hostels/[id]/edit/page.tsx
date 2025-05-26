@@ -5,8 +5,12 @@ import { useRouter, useParams } from "next/navigation";
 import HostelForm from "@/components/hostel/HostelForm";
 import { hostelApi } from "@/services/api";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
+import { Role } from "@prisma/client";
 
 export default function EditHostelPage() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === Role.SUPER_ADMIN;
   const router = useRouter();
   const params: { id: string } = useParams();
   const [hostel, setHostel] = useState<any>(null);
@@ -34,7 +38,7 @@ export default function EditHostelPage() {
     try {
       await hostelApi.update(params.id, data);
       toast.success("Hostel updated successfully");
-      router.push("/super-admin/hostels");
+      router.push(`/${isSuperAdmin ? "super-admin" : "hostel-admin"}/hostels`);
     } catch (error) {
       console.error("Error updating hostel:", error);
       toast.error("Failed to update hostel");

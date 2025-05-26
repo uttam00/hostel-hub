@@ -6,6 +6,15 @@ import { v4 as uuidv4 } from "uuid";
 import sgMail from "@sendgrid/mail";
 import bcrypt from "bcryptjs";
 
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+const FROM_EMAIL = process.env.FROM_EMAIL || "";
+
+if (!SENDGRID_API_KEY || !FROM_EMAIL) {
+  throw new Error("Missing required environment variables for SendGrid");
+}
+
+sgMail.setApiKey(SENDGRID_API_KEY);
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -38,15 +47,6 @@ export async function GET() {
     return new NextResponse("Internal error", { status: 500 });
   }
 }
-
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || "";
-
-if (!SENDGRID_API_KEY || !FROM_EMAIL) {
-  throw new Error("Missing required environment variables for SendGrid");
-}
-
-sgMail.setApiKey(SENDGRID_API_KEY);
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
       <p>The Team</p>
     `,
     };
-    
+
     await sgMail.send(msg);
     return NextResponse.json(admin);
   } catch (error) {

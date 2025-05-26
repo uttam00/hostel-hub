@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { adminApi } from "@/services/api";
+import { adminApi, hostelApi } from "@/services/api";
 import { Hostel, HostelAdmin } from "@/types";
 import { Role } from "@prisma/client";
 import { useRouter } from "next/navigation";
@@ -39,46 +39,89 @@ export default function HostelManagement({
 }: HostelManagementProps) {
   const isSuperAdmin = userRole === Role.SUPER_ADMIN;
   const router = useRouter();
-  const [selectedHostel, setSelectedHostel] = useState<Hostel | null>(null);
-  const [admins, setAdmins] = useState<HostelAdmin[]>([]);
-  const [newAdminId, setNewAdminId] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
+  // State declarations
+  const [isFetchingAdmin, setIsFetchingAdmin] = useState(false);
+  const [selectedHostel, setSelectedHostel] = useState<Hostel | null>(null);
+
+  const [admins, setAdmins] = useState<
+    Array<Pick<HostelAdmin, "id" | "name" | "email">>
+  >([]);
+  const [newAdminId, setNewAdminId] = useState("");
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Fetch hostel admins for a specific hostel
   const fetchHostelAdmins = async (hostelId: string) => {
     try {
+      setIsFetchingAdmin(true);
       const response = await adminApi.getByHostel(hostelId);
-      setAdmins(response);
+      setAdmins(response.admins);
     } catch (error) {
       console.error("Error fetching hostel admins:", error);
       toast.error("Failed to fetch hostel admins");
+    } finally {
+      setIsFetchingAdmin(false);
     }
   };
 
+  // Handle adding a new admin to a hostel
   const handleAddAdmin = async (hostelId: string, adminId: string) => {
+    if (!adminId) return;
     try {
+      setIsFetchingAdmin(true);
       await adminApi.assignHostel(adminId, [hostelId]);
       toast.success("Admin added successfully");
-      fetchHostelAdmins(hostelId);
+      setNewAdminId("");
+      await fetchHostelAdmins(hostelId);
+      setIsAdminDialogOpen(false);
     } catch (error) {
       console.error("Error adding admin:", error);
       toast.error("Failed to add admin");
+    } finally {
+      setIsFetchingAdmin(false);
     }
   };
 
+  // Handle removing an admin from a hostel
   const handleRemoveAdmin = async (hostelId: string, adminId: string) => {
     try {
+      setIsFetchingAdmin(true);
       await adminApi.unassignHostel(adminId, hostelId);
       toast.success("Admin removed successfully");
-      fetchHostelAdmins(hostelId);
+      await fetchHostelAdmins(hostelId);
     } catch (error) {
       console.error("Error removing admin:", error);
       toast.error("Failed to remove admin");
+    } finally {
+      setIsFetchingAdmin(false);
     }
   };
 
+  // Handle viewing admins for a specific hostel
   const handleViewAdmins = (hostel: Hostel) => {
     setSelectedHostel(hostel);
+    setIsAdminDialogOpen(true);
     fetchHostelAdmins(hostel.id);
+  };
+
+  // Handle hostel deletion
+  const handleDeleteHostel = async (hostelId: string) => {
+    setIsDeleting(true);
+    try {
+      await hostelApi.delete(hostelId);
+      toast.success("Hostel deleted successfully");
+      setIsDeleteDialogOpen(false);
+      router.refresh();
+    } catch (error) {
+      console.error("Error deleting hostel:", error);
+      toast.error("Failed to delete hostel");
+    } finally {
+      setIsDeleting(false);
+      setSelectedHostel(null);
+    }
   };
 
   return (
@@ -99,16 +142,21 @@ export default function HostelManagement({
               <TableHead>Description</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Rooms</TableHead>
-              {/* <TableHead>Rating</TableHead> */}
               <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8}>
+                <TableCell colSpan={6}>
                   <TableLoader />
+                </TableCell>
+              </TableRow>
+            ) : hostels.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center">
+                  No hostels found
                 </TableCell>
               </TableRow>
             ) : (
@@ -139,14 +187,6 @@ export default function HostelManagement({
                       </div>
                     </div>
                   </TableCell>
-                  {/* <TableCell>
-                <div className="space-y-1">
-                  <div>{hostel.averageRating} ⭐</div>
-                  <div className="text-sm text-muted-foreground">
-                    ({hostel.reviewCount} reviews)
-                  </div>
-                </div>
-              </TableCell> */}
                   <TableCell>
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -159,9 +199,18 @@ export default function HostelManagement({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-center">
                       {isSuperAdmin && (
-                        <Dialog>
+                        <Dialog
+                          open={
+                            isAdminDialogOpen &&
+                            selectedHostel?.id === hostel.id
+                          }
+                          onOpenChange={(open) => {
+                            setIsAdminDialogOpen(open);
+                            if (!open) setSelectedHostel(null);
+                          }}
+                        >
                           <DialogTrigger asChild>
                             <Button
                               variant="outline"
@@ -170,7 +219,9 @@ export default function HostelManagement({
                               Manage Admins
                             </Button>
                           </DialogTrigger>
-                          <DialogContent>
+                          <DialogContent
+                            onInteractOutside={(e) => e.preventDefault()}
+                          >
                             <DialogHeader>
                               <DialogTitle>Manage Hostel Admins</DialogTitle>
                             </DialogHeader>
@@ -185,18 +236,18 @@ export default function HostelManagement({
                                       e: React.ChangeEvent<HTMLInputElement>
                                     ) => setNewAdminId(e.target.value)}
                                     placeholder="Enter user ID"
+                                    disabled={isFetchingAdmin}
                                   />
                                   <Button
                                     onClick={() =>
                                       handleAddAdmin(hostel.id, newAdminId)
                                     }
-                                    disabled={isLoading || !newAdminId}
+                                    disabled={isFetchingAdmin || !newAdminId}
                                   >
                                     Add
                                   </Button>
                                 </div>
                               </div>
-
                               <div className="space-y-2">
                                 <Label>
                                   {selectedHostel?.name}'s Current Admins
@@ -210,27 +261,45 @@ export default function HostelManagement({
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {admins.map((admin) => (
-                                      <TableRow key={admin.id}>
-                                        <TableCell>{admin.name}</TableCell>
-                                        <TableCell>{admin.email}</TableCell>
-                                        <TableCell>
-                                          <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={() =>
-                                              handleRemoveAdmin(
-                                                hostel.id,
-                                                admin.id
-                                              )
-                                            }
-                                            disabled={isLoading}
-                                          >
-                                            Remove
-                                          </Button>
+                                    {loading ? (
+                                      <TableRow>
+                                        <TableCell colSpan={3}>
+                                          <TableLoader />
                                         </TableCell>
                                       </TableRow>
-                                    ))}
+                                    ) : admins.length === 0 &&
+                                      !isFetchingAdmin ? (
+                                      <TableRow>
+                                        <TableCell
+                                          colSpan={3}
+                                          className="text-center"
+                                        >
+                                          No admins assigned
+                                        </TableCell>
+                                      </TableRow>
+                                    ) : (
+                                      admins.map((admin) => (
+                                        <TableRow key={admin.id}>
+                                          <TableCell>{admin.name}</TableCell>
+                                          <TableCell>{admin.email}</TableCell>
+                                          <TableCell>
+                                            <Button
+                                              variant="destructive"
+                                              size="sm"
+                                              onClick={() =>
+                                                handleRemoveAdmin(
+                                                  hostel.id,
+                                                  admin.id
+                                                )
+                                              }
+                                              disabled={isFetchingAdmin}
+                                            >
+                                              Remove
+                                            </Button>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))
+                                    )}
                                   </TableBody>
                                 </Table>
                               </div>
@@ -250,6 +319,61 @@ export default function HostelManagement({
                       >
                         Edit
                       </Button>
+                      {isSuperAdmin && (
+                        <Dialog
+                          open={
+                            isDeleteDialogOpen &&
+                            selectedHostel?.id === hostel.id
+                          }
+                          onOpenChange={(open) => {
+                            setIsDeleteDialogOpen(open);
+                            if (!open) setSelectedHostel(null);
+                          }}
+                        >
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              onClick={() => {
+                                setSelectedHostel(hostel);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                              disabled={isDeleting}
+                            >
+                              Delete
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent
+                            onInteractOutside={(e) => e.preventDefault()}
+                          >
+                            <DialogHeader>
+                              <DialogTitle>Delete Hostel</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <p>
+                                Are you sure you want to delete{" "}
+                                <strong>{selectedHostel?.name}</strong>? This
+                                action cannot be undone.
+                              </p>
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setIsDeleteDialogOpen(false)}
+                                  disabled={isDeleting}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  onClick={() => handleDeleteHostel(hostel.id)}
+                                  disabled={isDeleting}
+                                >
+                                  {isDeleting ? "Deleting..." : "Delete"}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

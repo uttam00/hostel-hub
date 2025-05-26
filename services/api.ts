@@ -1,4 +1,5 @@
 import { PaginatedResponse } from "@/types";
+import { Hostel } from "@prisma/client";
 
 // Base URL for API calls - changes based on environment
 const getBaseUrl = () => {
@@ -103,6 +104,7 @@ export const hostelApi = {
       zipCode: string;
       country: string;
       amenities: string[];
+      status: Hostel["status"];
     }>
   ) => {
     const response = await fetch(`${getBaseUrl()}/api/hostels/${id}`, {
@@ -135,7 +137,7 @@ export const adminApi = {
 
   getByHostel: async (hostelId: string) => {
     const response = await fetch(
-      `${getBaseUrl()}/api/super-admin/admins?hostelId=${hostelId}`
+      `${getBaseUrl()}/api/super-admin/hostels/${hostelId}`
     );
     if (!response.ok) {
       throw new Error("Failed to fetch hostel admins");

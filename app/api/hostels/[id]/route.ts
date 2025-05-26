@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 // Schema for hostel update
 const hostelUpdateSchema = z.object({
@@ -27,14 +29,13 @@ const hostelUpdateSchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   amenities: z.array(z.string()).optional(),
+  status: z.enum(["ACTIVE", "INACTIVE"]),
   images: z.array(z.string()).optional(),
 });
 
 // GET a specific hostel
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: Request, context: { params: { id: string } }) {
+  const { params } = context;
   try {
     const hostel = await prisma.hostel.findUnique({
       where: { id: params.id },
@@ -92,11 +93,9 @@ export async function GET(
 }
 
 // PUT update a hostel
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(req: Request, context: { params: { id: string } }) {
   try {
+    const { params } = context;
     const user = await getCurrentUser();
 
     if (!user) {
@@ -148,7 +147,7 @@ export async function PUT(
 // DELETE a hostel
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const user = await getCurrentUser();
@@ -157,6 +156,33 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
+    const { params } = context;
+
+    // First, find all users who are assigned to this hostel
+    const usersWithHostel = await prisma.user.findMany({
+      where: {
+        hostels: {
+          some: {
+            id: params.id,
+          },
+        },
+      },
+    });
+
+    // Disconnect each user from the hostel
+    for (const user of usersWithHostel) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          hostels: {
+            disconnect: [{ id: params.id }],
+          },
+        },
+      });
+    }
+
+    // Then dele
+    //
     const hostel = await prisma.hostel.findUnique({
       where: { id: params.id },
     });
@@ -164,7 +190,6 @@ export async function DELETE(
     if (!hostel) {
       return NextResponse.json({ error: "Hostel not found" }, { status: 404 });
     }
-
     await prisma.hostel.delete({
       where: { id: params.id },
     });
