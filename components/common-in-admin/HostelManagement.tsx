@@ -22,7 +22,7 @@ import { adminApi, hostelApi } from "@/services/api";
 import { Hostel, HostelAdmin } from "@/types";
 import { Role } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { TableLoader } from "../ui/loader";
 
@@ -40,89 +40,136 @@ export default function HostelManagement({
   const isSuperAdmin = userRole === Role.SUPER_ADMIN;
   const router = useRouter();
 
-  // State declarations
-  const [isFetchingAdmin, setIsFetchingAdmin] = useState(false);
-  const [selectedHostel, setSelectedHostel] = useState<Hostel | null>(null);
+  // Consolidated state for dialogs and hostel management
+  const [state, setState] = useState<{
+    selectedHostel: Hostel | null;
+    admins: Array<Pick<HostelAdmin, "id" | "name" | "email">>;
+    newAdminId: string;
+    isAdminDialogOpen: boolean;
+    isDeleteDialogOpen: boolean;
+    isFetching: boolean;
+  }>({
+    selectedHostel: null,
+    admins: [],
+    newAdminId: "",
+    isAdminDialogOpen: false,
+    isDeleteDialogOpen: false,
+    isFetching: false,
+  });
 
-  const [admins, setAdmins] = useState<
-    Array<Pick<HostelAdmin, "id" | "name" | "email">>
-  >([]);
-  const [newAdminId, setNewAdminId] = useState("");
-  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  // Generic API handler with error handling and toast notifications
+  const handleApiCall = useCallback(
+    async (
+      apiCall: () => Promise<unknown>,
+      successMessage: string,
+      errorMessage: string,
+      callback?: () => void
+    ) => {
+      setState((prev) => ({ ...prev, isFetching: true }));
+      try {
+        await apiCall();
+        toast.success(successMessage);
+        callback?.();
+      } catch (error) {
+        console.error(errorMessage, error);
+        toast.error(errorMessage);
+      } finally {
+        setState((prev) => ({ ...prev, isFetching: false }));
+      }
+    },
+    []
+  );
 
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  // Fetch hostel admins
+  const fetchHostelAdmins = useCallback(
+    (hostelId: string) =>
+      handleApiCall(
+        async () => {
+          const response = await adminApi.getByHostel(hostelId);
+          setState((prev) => ({ ...prev, admins: response.admins }));
+        },
+        "Admins fetched successfully",
+        "Failed to fetch hostel admins"
+      ),
+    [handleApiCall]
+  );
 
-  // Fetch hostel admins for a specific hostel
-  const fetchHostelAdmins = async (hostelId: string) => {
-    try {
-      setIsFetchingAdmin(true);
-      const response = await adminApi.getByHostel(hostelId);
-      setAdmins(response.admins);
-    } catch (error) {
-      console.error("Error fetching hostel admins:", error);
-      toast.error("Failed to fetch hostel admins");
-    } finally {
-      setIsFetchingAdmin(false);
-    }
-  };
+  // Add admin to hostel
+  const handleAddAdmin = useCallback(
+    (hostelId: string, adminId: string) => {
+      if (!adminId) return;
+      handleApiCall(
+        async () => {
+          await adminApi.assignHostel(adminId, [hostelId]);
+          setState((prev) => ({ ...prev, newAdminId: "" }));
+          await fetchHostelAdmins(hostelId);
+          setState((prev) => ({ ...prev, isAdminDialogOpen: false }));
+        },
+        "Admin added successfully",
+        "Failed to add admin"
+      );
+    },
+    [handleApiCall, fetchHostelAdmins]
+  );
 
-  // Handle adding a new admin to a hostel
-  const handleAddAdmin = async (hostelId: string, adminId: string) => {
-    if (!adminId) return;
-    try {
-      setIsFetchingAdmin(true);
-      await adminApi.assignHostel(adminId, [hostelId]);
-      toast.success("Admin added successfully");
-      setNewAdminId("");
-      await fetchHostelAdmins(hostelId);
-      setIsAdminDialogOpen(false);
-    } catch (error) {
-      console.error("Error adding admin:", error);
-      toast.error("Failed to add admin");
-    } finally {
-      setIsFetchingAdmin(false);
-    }
-  };
+  // Remove admin from hostel
+  const handleRemoveAdmin = useCallback(
+    (hostelId: string, adminId: string) =>
+      handleApiCall(
+        async () => {
+          await adminApi.unassignHostel(adminId, hostelId);
+          await fetchHostelAdmins(hostelId);
+        },
+        "Admin removed successfully",
+        "Failed to remove admin"
+      ),
+    [handleApiCall, fetchHostelAdmins]
+  );
 
-  // Handle removing an admin from a hostel
-  const handleRemoveAdmin = async (hostelId: string, adminId: string) => {
-    try {
-      setIsFetchingAdmin(true);
-      await adminApi.unassignHostel(adminId, hostelId);
-      toast.success("Admin removed successfully");
-      await fetchHostelAdmins(hostelId);
-    } catch (error) {
-      console.error("Error removing admin:", error);
-      toast.error("Failed to remove admin");
-    } finally {
-      setIsFetchingAdmin(false);
-    }
-  };
+  // Delete hostel
+  const handleDeleteHostel = useCallback(
+    (hostelId: string) =>
+      handleApiCall(
+        async () => {
+          await hostelApi.delete(hostelId);
+          setState((prev) => ({
+            ...prev,
+            isDeleteDialogOpen: false,
+            selectedHostel: null,
+          }));
+          router.refresh();
+        },
+        "Hostel deleted successfully",
+        "Failed to delete hostel"
+      ),
+    [handleApiCall, router]
+  );
 
   // Handle viewing admins for a specific hostel
-  const handleViewAdmins = (hostel: Hostel) => {
-    setSelectedHostel(hostel);
-    setIsAdminDialogOpen(true);
-    fetchHostelAdmins(hostel.id);
-  };
+  const handleViewAdmins = useCallback(
+    (hostel: Hostel) => {
+      setState((prev) => ({
+        ...prev,
+        selectedHostel: hostel,
+        isAdminDialogOpen: true,
+      }));
+      fetchHostelAdmins(hostel.id);
+    },
+    [fetchHostelAdmins]
+  );
 
-  // Handle hostel deletion
-  const handleDeleteHostel = async (hostelId: string) => {
-    setIsDeleting(true);
-    try {
-      await hostelApi.delete(hostelId);
-      toast.success("Hostel deleted successfully");
-      setIsDeleteDialogOpen(false);
-      router.refresh();
-    } catch (error) {
-      console.error("Error deleting hostel:", error);
-      toast.error("Failed to delete hostel");
-    } finally {
-      setIsDeleting(false);
-      setSelectedHostel(null);
-    }
-  };
+  // Handle dialog state changes
+  const handleDialogChange = useCallback(
+    (dialogType: "admin" | "delete", open: boolean) => {
+      setState((prev) => ({
+        ...prev,
+        [dialogType === "admin" ? "isAdminDialogOpen" : "isDeleteDialogOpen"]:
+          open,
+        selectedHostel: open ? prev.selectedHostel : null,
+      }));
+    },
+    []
+  );
 
   return (
     <div className="space-y-6">
@@ -203,13 +250,12 @@ export default function HostelManagement({
                       {isSuperAdmin && (
                         <Dialog
                           open={
-                            isAdminDialogOpen &&
-                            selectedHostel?.id === hostel.id
+                            state.isAdminDialogOpen &&
+                            state.selectedHostel?.id === hostel.id
                           }
-                          onOpenChange={(open) => {
-                            setIsAdminDialogOpen(open);
-                            if (!open) setSelectedHostel(null);
-                          }}
+                          onOpenChange={(open) =>
+                            handleDialogChange("admin", open)
+                          }
                         >
                           <DialogTrigger asChild>
                             <Button
@@ -231,18 +277,26 @@ export default function HostelManagement({
                                 <div className="flex gap-2">
                                   <Input
                                     id="newAdmin"
-                                    value={newAdminId}
-                                    onChange={(
-                                      e: React.ChangeEvent<HTMLInputElement>
-                                    ) => setNewAdminId(e.target.value)}
+                                    value={state.newAdminId}
+                                    onChange={(e) =>
+                                      setState((prev) => ({
+                                        ...prev,
+                                        newAdminId: e.target.value,
+                                      }))
+                                    }
                                     placeholder="Enter user ID"
-                                    disabled={isFetchingAdmin}
+                                    disabled={state.isFetching}
                                   />
                                   <Button
                                     onClick={() =>
-                                      handleAddAdmin(hostel.id, newAdminId)
+                                      handleAddAdmin(
+                                        hostel.id,
+                                        state.newAdminId
+                                      )
                                     }
-                                    disabled={isFetchingAdmin || !newAdminId}
+                                    disabled={
+                                      state.isFetching || !state.newAdminId
+                                    }
                                   >
                                     Add
                                   </Button>
@@ -250,7 +304,7 @@ export default function HostelManagement({
                               </div>
                               <div className="space-y-2">
                                 <Label>
-                                  {selectedHostel?.name}'s Current Admins
+                                  {state.selectedHostel?.name}'s Current Admins
                                 </Label>
                                 <Table>
                                   <TableHeader>
@@ -267,8 +321,8 @@ export default function HostelManagement({
                                           <TableLoader />
                                         </TableCell>
                                       </TableRow>
-                                    ) : admins.length === 0 &&
-                                      !isFetchingAdmin ? (
+                                    ) : state.admins.length === 0 &&
+                                      !state.isFetching ? (
                                       <TableRow>
                                         <TableCell
                                           colSpan={3}
@@ -278,7 +332,7 @@ export default function HostelManagement({
                                         </TableCell>
                                       </TableRow>
                                     ) : (
-                                      admins.map((admin) => (
+                                      state.admins.map((admin) => (
                                         <TableRow key={admin.id}>
                                           <TableCell>{admin.name}</TableCell>
                                           <TableCell>{admin.email}</TableCell>
@@ -292,7 +346,7 @@ export default function HostelManagement({
                                                   admin.id
                                                 )
                                               }
-                                              disabled={isFetchingAdmin}
+                                              disabled={state.isFetching}
                                             >
                                               Remove
                                             </Button>
@@ -322,22 +376,24 @@ export default function HostelManagement({
                       {isSuperAdmin && (
                         <Dialog
                           open={
-                            isDeleteDialogOpen &&
-                            selectedHostel?.id === hostel.id
+                            state.isDeleteDialogOpen &&
+                            state.selectedHostel?.id === hostel.id
                           }
-                          onOpenChange={(open) => {
-                            setIsDeleteDialogOpen(open);
-                            if (!open) setSelectedHostel(null);
-                          }}
+                          onOpenChange={(open) =>
+                            handleDialogChange("delete", open)
+                          }
                         >
                           <DialogTrigger asChild>
                             <Button
                               variant="destructive"
-                              onClick={() => {
-                                setSelectedHostel(hostel);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                              disabled={isDeleting}
+                              onClick={() =>
+                                setState((prev) => ({
+                                  ...prev,
+                                  selectedHostel: hostel,
+                                  isDeleteDialogOpen: true,
+                                }))
+                              }
+                              disabled={state.isFetching}
                             >
                               Delete
                             </Button>
@@ -351,23 +407,28 @@ export default function HostelManagement({
                             <div className="space-y-4">
                               <p>
                                 Are you sure you want to delete{" "}
-                                <strong>{selectedHostel?.name}</strong>? This
-                                action cannot be undone.
+                                <strong>{state.selectedHostel?.name}</strong>?
+                                This action cannot be undone.
                               </p>
                               <div className="flex justify-end gap-2">
                                 <Button
                                   variant="outline"
-                                  onClick={() => setIsDeleteDialogOpen(false)}
-                                  disabled={isDeleting}
+                                  onClick={() =>
+                                    setState((prev) => ({
+                                      ...prev,
+                                      isDeleteDialogOpen: false,
+                                    }))
+                                  }
+                                  disabled={state.isFetching}
                                 >
                                   Cancel
                                 </Button>
                                 <Button
                                   variant="destructive"
                                   onClick={() => handleDeleteHostel(hostel.id)}
-                                  disabled={isDeleting}
+                                  disabled={state.isFetching}
                                 >
-                                  {isDeleting ? "Deleting..." : "Delete"}
+                                  {state.isFetching ? "Deleting..." : "Delete"}
                                 </Button>
                               </div>
                             </div>
