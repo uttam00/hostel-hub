@@ -121,7 +121,7 @@ NEXTAUTH_URL='http://localhost:3000'
 NEXT_PUBLIC_API_URL='http://localhost:3000'
 
 # For Sending EMAIL 
-SENDGRID_API_KEY=Your send grid API key
+SENDGRID_API_KEY="Your_send_grid_API_key'
 FROM_EMAIL=example@gmail.com
 
 # Database
