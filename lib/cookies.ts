@@ -1,12 +1,15 @@
 import Cookies from "js-cookie";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Role } from "@prisma/client";
 
 export interface UserCookie {
   id: string;
   email: string;
-  role: string;
+  role: Role;
   name?: string;
+  image?: string;
+  phoneNumber?: string;
 }
 
 export const setUserCookie = (userData: UserCookie) => {

@@ -15,7 +15,7 @@ export function getInitialsFromEmail(email: string): {
   if (!email || typeof email !== "string")
     return { initials: "", isValidEmail: false };
 
-  const [username] = email.split("@");
+const [username] = email.split("@");
   if (!username) return { initials: "", isValidEmail: false };
 
   const parts = username.split(/[._\-]/); // split on dot, underscore, hyphen

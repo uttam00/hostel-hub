@@ -9,6 +9,7 @@ import { useState } from "react";
 import imageCompression from "browser-image-compression";
 
 interface ImageUploadProps {
+  hideLabel?: boolean;
   value: string[];
   onChange: (urls: string[]) => void;
   onRemove: (url: string) => void;
@@ -16,6 +17,7 @@ interface ImageUploadProps {
 }
 
 export default function ImageUpload({
+  hideLabel = false,
   value,
   onChange,
   onRemove,
@@ -107,7 +109,7 @@ export default function ImageUpload({
       </div>
       {value.length < maxImages && (
         <div className="space-y-2">
-          <Label htmlFor="images">Upload Images</Label>
+          {!hideLabel && <Label htmlFor="images">Upload Images</Label>}
           <Input
             id="images"
             type="file"

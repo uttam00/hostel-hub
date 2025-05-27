@@ -74,6 +74,8 @@ export function LoginForm() {
           email: userData.email,
           role: userData.role,
           name: userData.name,
+          image: userData.image,
+          phoneNumber: userData.phoneNumber,
         });
 
         // Redirect based on role

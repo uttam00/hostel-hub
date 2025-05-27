@@ -42,6 +42,31 @@ export const authApi = {
   },
 };
 
+// User APIs
+
+export const userApi = {
+  update: async (userData: {
+    id: string;
+    name: string;
+    phoneNumber: string;
+    image: string;
+  }) => {
+    const response = await fetch(`${getBaseUrl()}/api/profile`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update profile");
+    }
+
+    return response.json();
+  },
+};
+
 // Hostel APIs
 export const hostelApi = {
   getAll: async (params?: {

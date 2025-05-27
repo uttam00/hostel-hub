@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { UserCookie, getUserCookie, removeUserCookie } from "@/lib/cookies";
+import {
+  UserCookie,
+  getUserCookie,
+  removeUserCookie,
+  setUserCookie, // 👈 make sure this exists
+} from "@/lib/cookies";
 
 export function useAuth() {
   const router = useRouter();
@@ -22,9 +27,14 @@ export function useAuth() {
     await signOut({ redirect: false });
     removeUserCookie();
     setUser(null);
-    // Clear any other stored data
     localStorage.clear();
     sessionStorage.clear();
+  };
+
+  const updateUser = async (updatedData: Partial<UserCookie>) => {
+    const newUser = { ...user, ...updatedData } as UserCookie;
+    setUser(newUser);
+    await setUserCookie(newUser); // 👈 update the cookie as well
   };
 
   const isAuthenticated = !!user;
@@ -38,5 +48,6 @@ export function useAuth() {
     isAdmin,
     isSuperAdmin,
     logout,
+    updateUser, // 👈 exposed here
   };
 }

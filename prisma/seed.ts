@@ -66,6 +66,7 @@ async function main() {
         longitude: -74.006,
         amenities: ["WiFi", "Laundry", "Kitchen", "Study Room"],
         images: ["image1.jpg", "image2.jpg"],
+        status: "ACTIVE",
         admins: {
           connect: [{ id: users[1].id }],
         },
@@ -84,6 +85,7 @@ async function main() {
         longitude: -71.0589,
         amenities: ["WiFi", "Gym", "Common Room"],
         images: ["image3.jpg", "image4.jpg"],
+        status: "ACTIVE",
         admins: {
           connect: [{ id: users[1].id }],
         },
@@ -102,6 +104,7 @@ async function main() {
         longitude: -87.6298,
         amenities: ["WiFi", "Laundry", "Kitchen"],
         images: ["image5.jpg", "image6.jpg"],
+        status: "ACTIVE",
         admins: {
           connect: [{ id: users[1].id }],
         },
@@ -120,6 +123,7 @@ async function main() {
         longitude: -122.4194,
         amenities: ["WiFi", "Gym", "Pool", "Rooftop Lounge"],
         images: ["image7.jpg", "image8.jpg"],
+        status: "ACTIVE",
         admins: {
           connect: [{ id: users[1].id }],
         },

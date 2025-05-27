@@ -5,6 +5,17 @@ export enum HostelStatus {
   INACTIVE = "INACTIVE",
 }
 
+export type User = {
+  id: string;
+  name?: string;
+  email?: string;
+  phoneNumber?: string;
+  image?: string;
+  role: "STUDENT" | "HOSTEL_ADMIN" | "SUPER_ADMIN";
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type Hostel = {
   id: string;
   name: string;
@@ -30,7 +41,7 @@ export type Hostel = {
     price: number;
     isAvailable: boolean;
   }[];
-  admins?: { id: string; name?: string | null; email?: string | null }[];
+  admins?: User[];
 };
 
 export type HostelDetails = Prisma.HostelGetPayload<{
@@ -101,6 +112,8 @@ export type BookingDetails = Booking & {
     id: string;
     name?: string;
     email?: string;
+    PhoneNumber?: string;
+    image?: string;
   };
   room: {
     id: string;

@@ -45,9 +45,10 @@ model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
+  phoneNumber   String?
   emailVerified DateTime?
   password      String?
-  image         String?
+  image         String?     
   role          Role      @default(STUDENT)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
