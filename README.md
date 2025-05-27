@@ -120,6 +120,10 @@ NEXTAUTH_URL='http://localhost:3000'
 # API URL
 NEXT_PUBLIC_API_URL='http://localhost:3000'
 
+# For Sending EMAIL 
+SENDGRID_API_KEY="Your_send_grid_API_key'
+FROM_EMAIL=example@gmail.com
+
 # Database
 DATABASE_URL="postgresql://username:password@localhost:5432/hostel_management?schema=public"
 
