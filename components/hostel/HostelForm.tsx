@@ -32,9 +32,9 @@ type HostelFormValues = {
   city: string;
   state: string;
   zipCode: string;
-  latitude?: string;
-  longitude?: string;
-  amenities: string;
+  latitude?: number;
+  longitude?: number;
+  amenities: string[];
   images: string[];
   country: string;
   status: HostelStatus;
@@ -65,9 +65,9 @@ export default function HostelForm({
       city: initialData?.city || "",
       state: initialData?.state || "",
       zipCode: initialData?.zipCode || "",
-      latitude: initialData?.latitude?.toString() || "",
-      longitude: initialData?.longitude?.toString() || "",
-      amenities: initialData?.amenities.join(", ") || "",
+      latitude: initialData?.latitude || 0,
+      longitude: initialData?.longitude || 0,
+      amenities: initialData?.amenities || [],
       images: initialData?.images || [],
       country: initialData?.country || "USA",
       status: initialData?.status ?? HostelStatus.ACTIVE,
@@ -75,7 +75,7 @@ export default function HostelForm({
       reviewCount: initialData?.reviewCount || 0,
       availableRooms: initialData?.availableRooms || 0,
       lowestPrice: initialData?.lowestPrice || 0,
-      totalRooms: initialData?.totalRooms || 0,
+      totalRooms: initialData?.totalRooms || 1,
     },
   });
 
@@ -93,8 +93,8 @@ export default function HostelForm({
     form.setValue("state", location.state);
     form.setValue("zipCode", location.zipCode);
     form.setValue("country", location.country);
-    form.setValue("latitude", location.latitude.toString());
-    form.setValue("longitude", location.longitude.toString());
+    form.setValue("latitude", location.latitude);
+    form.setValue("longitude", location.longitude);
   };
 
   const handleSubmit = async (data: HostelFormValues) => {
@@ -106,9 +106,9 @@ export default function HostelForm({
       state: data.state,
       zipCode: data.zipCode,
       country: data.country,
-      latitude: parseFloat(data.latitude ?? "0"),
-      longitude: parseFloat(data.longitude ?? "0"),
-      amenities: data.amenities.split(",").map((item) => item.trim()),
+      latitude: data.latitude ? Number(data.latitude) : null,
+      longitude: data.longitude ? Number(data.longitude) : null,
+      amenities: data.amenities,
       images: data.images,
       status: data.status,
       averageRating: data.averageRating,
@@ -117,12 +117,21 @@ export default function HostelForm({
       lowestPrice: data.lowestPrice,
       totalRooms: data.totalRooms,
     };
+    console.log("Formatted data:", formattedData);
     await onSubmit(formattedData);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit(handleSubmit, (errors) => {
+            console.log("Form validation failed:", errors);
+          })(e);
+        }}
+        className="space-y-8"
+      >
         <FormField
           control={form.control}
           name="name"
@@ -160,16 +169,8 @@ export default function HostelForm({
           <LocationPicker
             onLocationSelect={handleLocationSelect}
             initialAddress={form.getValues("address")}
-            initialLatitude={
-              form.getValues("latitude")
-                ? parseFloat(form.getValues("latitude") ?? "")
-                : undefined
-            }
-            initialLongitude={
-              form.getValues("longitude")
-                ? parseFloat(form.getValues("longitude") ?? "")
-                : undefined
-            }
+            initialLatitude={form.getValues("latitude")}
+            initialLongitude={form.getValues("longitude")}
           />
         </div>
 
@@ -182,6 +183,15 @@ export default function HostelForm({
               <FormControl>
                 <Input
                   {...field}
+                  value={field.value.join(", ")}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const amenitiesArray = value
+                      .split(",")
+                      .map((item) => item.trim())
+                      .filter(Boolean);
+                    field.onChange(amenitiesArray);
+                  }}
                   placeholder="Enter amenities separated by commas"
                 />
               </FormControl>
@@ -224,6 +234,25 @@ export default function HostelForm({
                   <option value={HostelStatus.ACTIVE}>Active</option>
                   <option value={HostelStatus.INACTIVE}>Inactive</option>
                 </select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="totalRooms"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Total Rooms</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min={1}
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

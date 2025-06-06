@@ -24,7 +24,7 @@ export default function NewHostelPage() {
   };
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto pb-10">
       <h1 className="text-2xl font-bold mb-8">Add New Hostel</h1>
       <HostelForm onSubmit={handleSubmit} />
     </div>
