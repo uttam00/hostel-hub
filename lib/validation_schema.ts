@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 // Common schema for hostel
+
 const baseHostelSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
@@ -15,15 +16,20 @@ const baseHostelSchema = z.object({
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
 });
 
+const imageFileSchema = z.object({
+  file: z.any(), // Could refine to `instanceof File` if needed
+  preview: z.string().url(),
+});
+
 // Schema for room type
 const roomTypeSchema = z.object({
   type: z.enum(["ONE_SHARING", "TWO_SHARING", "THREE_SHARING", "FOUR_SHARING"]),
-  images: z.array(z.string()),
+  images: z.array(imageFileSchema),
 });
 
 // Schema for hostel
 export const hostelSchema = baseHostelSchema.extend({
-  images: z.array(z.string()).min(1, "At least one image is required"),
+  images: z.array(imageFileSchema).min(1, "At least one image is required"),
   roomTypes: z.array(roomTypeSchema).default([]),
   totalRooms: z.number().min(1, "Must have at least 1 room"),
   adminId: z.string().optional(),
@@ -35,12 +41,12 @@ export const hostelSchema = baseHostelSchema.extend({
 
 // Schema for hostel creation
 export const createHostelSchema = baseHostelSchema.extend({
-  images: z.array(z.string()).default([]),
+  images: z.array(imageFileSchema).default([]),
 });
 
 //Schema for hostel update
 export const hostelUpdateSchema = baseHostelSchema.partial().extend({
-  images: z.array(z.string()).optional(),
+  images: z.array(imageFileSchema).optional(),
   averageRating: z.number().optional(),
   reviewCount: z.number().optional(),
   availableRooms: z.number().optional(),

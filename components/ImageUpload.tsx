@@ -19,9 +19,11 @@ interface ImageUploadProps {
   onChange: (files: ImageFile[]) => void;
   onRemove: (index: number) => void;
   maxImages?: number;
+  inputId?: string;
 }
 
 export default function ImageUpload({
+  inputId,
   hideLabel = false,
   value,
   onChange,
@@ -97,7 +99,7 @@ export default function ImageUpload({
         <div className="space-y-2">
           {!hideLabel && <Label htmlFor="images">Upload Images</Label>}
           <Input
-            id="images"
+            id={inputId || "images"}
             type="file"
             accept="image/jpeg,image/png,image/webp"
             multiple
@@ -108,7 +110,9 @@ export default function ImageUpload({
           <Button
             type="button"
             variant="outline"
-            onClick={() => document.getElementById("images")?.click()}
+            onClick={() =>
+              document.getElementById(inputId || "images")?.click()
+            }
             disabled={isProcessing}
             className="w-full"
           >

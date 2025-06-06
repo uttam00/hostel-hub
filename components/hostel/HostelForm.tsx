@@ -139,93 +139,82 @@ export default function HostelForm({
   };
 
   const handleSubmit = async (data: HostelFormValues) => {
+    console.log({ data });
     try {
-      // Upload hostel images
-      const hostelImageUrls = await Promise.all(
-        data.images.map(async (imageFile) => {
-          // If it's an existing image (no file property or empty file), return the preview URL directly
-          if (!imageFile.file || imageFile.file.size === 0) {
-            return imageFile.preview;
-          }
-
-          const formData = new FormData();
-          formData.append("file", imageFile.file);
-          formData.append("folderName", "hostels");
-
-          const response = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to upload hostel image");
-          }
-
-          const result = await response.json();
-          return result.url;
-        })
-      );
-
-      // Upload room type images
-      const roomTypeImageUrls = await Promise.all(
-        data.roomTypes.map(async (roomType) => {
-          const imageUrls = await Promise.all(
-            roomType.images.map(async (imageFile) => {
-              // If it's an existing image (no file property or empty file), return the preview URL directly
-              if (!imageFile.file || imageFile.file.size === 0) {
-                return imageFile.preview;
-              }
-
-              const formData = new FormData();
-              formData.append("file", imageFile.file);
-              formData.append(
-                "folderName",
-                `hostels/rooms/${roomType.type.toLowerCase()}`
-              );
-
-              const response = await fetch("/api/upload", {
-                method: "POST",
-                body: formData,
-              });
-
-              if (!response.ok) {
-                throw new Error(`Failed to upload ${roomType.type} room image`);
-              }
-
-              const result = await response.json();
-              return result.url;
-            })
-          );
-
-          return {
-            type: roomType.type,
-            images: imageUrls,
-          };
-        })
-      );
-
-      const formattedData: HostelFormData = {
-        name: data.name,
-        description: data.description,
-        address: data.address,
-        city: data.city,
-        state: data.state,
-        zipCode: data.zipCode,
-        country: data.country,
-        latitude: data.latitude ? Number(data.latitude) : 0,
-        longitude: data.longitude ? Number(data.longitude) : 0,
-        amenities: data.amenities,
-        images: hostelImageUrls,
-        roomTypes: roomTypeImageUrls,
-        status: data.status,
-        averageRating: data.averageRating,
-        reviewCount: data.reviewCount,
-        availableRooms: data.availableRooms,
-        lowestPrice: data.lowestPrice,
-        totalRooms: data.totalRooms,
-      };
-
-      await onSubmit(formattedData);
+      // // Upload hostel images
+      // const hostelImageUrls = await Promise.all(
+      //   data.images.map(async (imageFile) => {
+      //     // If it's an existing image (no file property or empty file), return the preview URL directly
+      //     if (!imageFile.file || imageFile.file.size === 0) {
+      //       return imageFile.preview;
+      //     }
+      //     const formData = new FormData();
+      //     formData.append("file", imageFile.file);
+      //     formData.append("folderName", "hostels");
+      //     const response = await fetch("/api/upload", {
+      //       method: "POST",
+      //       body: formData,
+      //     });
+      //     if (!response.ok) {
+      //       throw new Error("Failed to upload hostel image");
+      //     }
+      //     const result = await response.json();
+      //     return result.url;
+      //   })
+      // );
+      // // Upload room type images
+      // const roomTypeImageUrls = await Promise.all(
+      //   data.roomTypes.map(async (roomType) => {
+      //     const imageUrls = await Promise.all(
+      //       roomType.images.map(async (imageFile) => {
+      //         // If it's an existing image (no file property or empty file), return the preview URL directly
+      //         if (!imageFile.file || imageFile.file.size === 0) {
+      //           return imageFile.preview;
+      //         }
+      //         const formData = new FormData();
+      //         formData.append("file", imageFile.file);
+      //         formData.append(
+      //           "folderName",
+      //           `hostels/rooms/${roomType.type.toLowerCase()}`
+      //         );
+      //         const response = await fetch("/api/upload", {
+      //           method: "POST",
+      //           body: formData,
+      //         });
+      //         if (!response.ok) {
+      //           throw new Error(`Failed to upload ${roomType.type} room image`);
+      //         }
+      //         const result = await response.json();
+      //         return result.url;
+      //       })
+      //     );
+      //     return {
+      //       type: roomType.type,
+      //       images: imageUrls,
+      //     };
+      //   })
+      // );
+      // const formattedData: HostelFormData = {
+      //   name: data.name,
+      //   description: data.description,
+      //   address: data.address,
+      //   city: data.city,
+      //   state: data.state,
+      //   zipCode: data.zipCode,
+      //   country: data.country,
+      //   latitude: data.latitude ? Number(data.latitude) : 0,
+      //   longitude: data.longitude ? Number(data.longitude) : 0,
+      //   amenities: data.amenities,
+      //   images: hostelImageUrls,
+      //   roomTypes: roomTypeImageUrls,
+      //   status: data.status,
+      //   averageRating: data.averageRating,
+      //   reviewCount: data.reviewCount,
+      //   availableRooms: data.availableRooms,
+      //   lowestPrice: data.lowestPrice,
+      //   totalRooms: data.totalRooms,
+      // };
+      // await onSubmit(formattedData);
     } catch (error) {
       console.error("Error uploading images:", error);
       throw error;
@@ -276,6 +265,34 @@ export default function HostelForm({
         />
 
         <div className="space-y-4">
+          <FormLabel>Hostel Images</FormLabel>
+          <FormField
+            control={form.control}
+            name="images"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="space-y-4">
+                    <ImageUpload
+                      inputId="hostel-images"
+                      hideLabel
+                      value={field.value}
+                      onChange={(files) => field.onChange(files)}
+                      onRemove={(index) => {
+                        const newImages = [...field.value];
+                        newImages.splice(index, 1);
+                        field.onChange(newImages);
+                      }}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="space-y-4">
           <FormLabel>Location</FormLabel>
           <LocationPicker
             onLocationSelect={handleLocationSelect}
@@ -312,33 +329,6 @@ export default function HostelForm({
         />
 
         <div className="space-y-4">
-          <FormLabel>Hostel Images</FormLabel>
-          <FormField
-            control={form.control}
-            name="images"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <div className="space-y-4">
-                    <ImageUpload
-                      hideLabel
-                      value={field.value}
-                      onChange={(files) => field.onChange(files)}
-                      onRemove={(index) => {
-                        const newImages = [...field.value];
-                        newImages.splice(index, 1);
-                        field.onChange(newImages);
-                      }}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="space-y-4">
           <FormLabel>Room Types</FormLabel>
           <Tabs defaultValue="ONE_SHARING" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
@@ -368,6 +358,7 @@ export default function HostelForm({
                       <FormItem>
                         <FormControl>
                           <ImageUpload
+                            inputId={`room-type-${type.toLowerCase()}`}
                             hideLabel
                             value={roomType.images}
                             onChange={(files) => {
