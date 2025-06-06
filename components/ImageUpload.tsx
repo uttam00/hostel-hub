@@ -8,11 +8,16 @@ import Image from "next/image";
 import { useState } from "react";
 import imageCompression from "browser-image-compression";
 
+interface ImageFile {
+  file: File;
+  preview: string;
+}
+
 interface ImageUploadProps {
   hideLabel?: boolean;
-  value: string[];
-  onChange: (urls: string[]) => void;
-  onRemove: (url: string) => void;
+  value: ImageFile[];
+  onChange: (files: ImageFile[]) => void;
+  onRemove: (index: number) => void;
   maxImages?: number;
 }
 
@@ -29,13 +34,13 @@ export default function ImageUpload({
     const options = {
       maxSizeMB: 1,
       maxWidthOrHeight: 1920,
-      useWebWorker: true,
+      useWebWorker: false,
     };
     try {
       return await imageCompression(file, options);
     } catch (error) {
       console.error("Error compressing image:", error);
-      return file; // Return original file if compression fails
+      return file;
     }
   };
 
@@ -44,31 +49,24 @@ export default function ImageUpload({
     if (!files) return;
 
     setIsProcessing(true);
-    const newImages: string[] = [];
+    const newImages: ImageFile[] = [];
 
     try {
       for (const file of Array.from(files)) {
         if (newImages.length + value.length >= maxImages) break;
 
-        // Compress the image
         const compressedFile = await compressImage(file);
+        const preview = URL.createObjectURL(compressedFile);
+        newImages.push({ file: compressedFile, preview });
 
-        // Convert to base64
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (typeof reader.result === "string") {
-            newImages.push(reader.result);
-            if (
-              newImages.length ===
-              Math.min(Array.from(files).length, maxImages - value.length)
-            ) {
-              const updatedUrls = [...value, ...newImages];
-              onChange(updatedUrls);
-              setIsProcessing(false);
-            }
-          }
-        };
-        reader.readAsDataURL(compressedFile);
+        if (
+          newImages.length ===
+          Math.min(Array.from(files).length, maxImages - value.length)
+        ) {
+          const updatedFiles = [...value, ...newImages];
+          onChange(updatedFiles);
+          setIsProcessing(false);
+        }
       }
     } catch (error) {
       console.error("Error processing images:", error);
@@ -77,37 +75,25 @@ export default function ImageUpload({
   };
 
   const removeImage = (index: number) => {
-    const newImages = [...value];
-    const urlToRemove = newImages[index];
-    newImages.splice(index, 1);
-    onRemove(urlToRemove);
-    onChange(newImages);
+    if (value[index]?.preview?.startsWith("blob:")) {
+      URL.revokeObjectURL(value[index].preview);
+    }
+    onRemove(index);
+  };
+
+  const removeAllImages = () => {
+    value.forEach((image) => {
+      if (image.preview?.startsWith("blob:")) {
+        URL.revokeObjectURL(image.preview);
+      }
+    });
+    onChange([]);
   };
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {value.map((url, index) => (
-          <div key={index} className="relative aspect-square">
-            <Image
-              src={url}
-              alt={`Image ${index + 1}`}
-              fill
-              className="rounded-lg object-cover"
-            />
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              className="absolute right-2 top-2"
-              onClick={() => removeImage(index)}
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
-      {value.length < maxImages && (
+      {/* Upload Box */}
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
         <div className="space-y-2">
           {!hideLabel && <Label htmlFor="images">Upload Images</Label>}
           <Input
@@ -117,12 +103,68 @@ export default function ImageUpload({
             multiple
             onChange={handleImageChange}
             disabled={isProcessing}
+            className="hidden"
           />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => document.getElementById("images")?.click()}
+            disabled={isProcessing}
+            className="w-full"
+          >
+            Upload your image
+          </Button>
           {isProcessing && (
             <p className="text-sm text-muted-foreground">
               Processing images...
             </p>
           )}
+        </div>
+      </div>
+
+      {/* Image List */}
+      {value.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={removeAllImages}
+            >
+              Remove All
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {value.map((imageFile, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between border rounded-lg p-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="relative w-[30px] h-[30px]">
+                    <Image
+                      src={imageFile.preview}
+                      alt={`Image ${index + 1}`}
+                      fill
+                      className="rounded object-cover"
+                    />
+                  </div>
+                  <span className="text-sm truncate">
+                    {imageFile.file.name}
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeImage(index)}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -16,6 +16,11 @@ export type User = {
   updatedAt: string;
 };
 
+export type RoomType = {
+  type: "ONE_SHARING" | "TWO_SHARING" | "THREE_SHARING" | "FOUR_SHARING";
+  images: string[];
+};
+
 export type Hostel = {
   id: string;
   name: string;
@@ -29,6 +34,7 @@ export type Hostel = {
   longitude?: number;
   amenities: string[];
   images: string[];
+  roomTypes: RoomType[];
   averageRating: number;
   reviewCount: number;
   availableRooms: number;

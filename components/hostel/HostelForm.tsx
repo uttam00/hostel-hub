@@ -11,19 +11,40 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { HostelDetails } from "@/types";
+import { Hostel, HostelStatus } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import ImageUpload from "../ImageUpload";
 import LocationPicker from "@/components/LocationPicker";
-import { HostelStatus } from "@prisma/client";
 import { hostelSchema } from "@/lib/validation_schema";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { X } from "lucide-react";
+
+type ImageFile = {
+  file: File;
+  preview: string;
+};
+
+const ROOM_TYPES = [
+  "ONE_SHARING",
+  "TWO_SHARING",
+  "THREE_SHARING",
+  "FOUR_SHARING",
+] as const;
+type RoomTypeValue = (typeof ROOM_TYPES)[number];
+
+type RoomType = {
+  type: RoomTypeValue;
+  images: ImageFile[];
+};
 
 type HostelFormData = Omit<
-  HostelDetails,
-  "id" | "rooms" | "reviews" | "createdAt" | "updatedAt"
->;
+  Hostel,
+  "id" | "rooms" | "admins" | "createdAt" | "updatedAt"
+> & {
+  roomTypes: RoomType[];
+};
 
 type HostelFormValues = {
   name: string;
@@ -32,11 +53,15 @@ type HostelFormValues = {
   city: string;
   state: string;
   zipCode: string;
+  country: string;
   latitude?: number;
   longitude?: number;
   amenities: string[];
-  images: string[];
-  country: string;
+  images: Array<{ file: File; preview: string }>;
+  roomTypes: Array<{
+    type: RoomTypeValue;
+    images: Array<{ file: File; preview: string }>;
+  }>;
   status: HostelStatus;
   averageRating: number;
   reviewCount: number;
@@ -68,7 +93,23 @@ export default function HostelForm({
       latitude: initialData?.latitude || 0,
       longitude: initialData?.longitude || 0,
       amenities: initialData?.amenities || [],
-      images: initialData?.images || [],
+      images:
+        initialData?.images.map((url) => ({
+          file: new File([], url),
+          preview: url,
+        })) || [],
+      roomTypes: initialData?.roomTypes?.map((rt) => ({
+        type: rt.type as RoomTypeValue,
+        images: rt.images.map((url) => ({
+          file: new File([], url),
+          preview: url,
+        })),
+      })) || [
+        { type: "ONE_SHARING", images: [] },
+        { type: "TWO_SHARING", images: [] },
+        { type: "THREE_SHARING", images: [] },
+        { type: "FOUR_SHARING", images: [] },
+      ],
       country: initialData?.country || "USA",
       status: initialData?.status ?? HostelStatus.ACTIVE,
       averageRating: initialData?.averageRating || 0,
@@ -98,27 +139,97 @@ export default function HostelForm({
   };
 
   const handleSubmit = async (data: HostelFormValues) => {
-    const formattedData: HostelFormData = {
-      name: data.name,
-      description: data.description,
-      address: data.address,
-      city: data.city,
-      state: data.state,
-      zipCode: data.zipCode,
-      country: data.country,
-      latitude: data.latitude ? Number(data.latitude) : null,
-      longitude: data.longitude ? Number(data.longitude) : null,
-      amenities: data.amenities,
-      images: data.images,
-      status: data.status,
-      averageRating: data.averageRating,
-      reviewCount: data.reviewCount,
-      availableRooms: data.availableRooms,
-      lowestPrice: data.lowestPrice,
-      totalRooms: data.totalRooms,
-    };
-    console.log("Formatted data:", formattedData);
-    await onSubmit(formattedData);
+    try {
+      // Upload hostel images
+      const hostelImageUrls = await Promise.all(
+        data.images.map(async (imageFile) => {
+          // If it's an existing image (no file property or empty file), return the preview URL directly
+          if (!imageFile.file || imageFile.file.size === 0) {
+            return imageFile.preview;
+          }
+
+          const formData = new FormData();
+          formData.append("file", imageFile.file);
+          formData.append("folderName", "hostels");
+
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to upload hostel image");
+          }
+
+          const result = await response.json();
+          return result.url;
+        })
+      );
+
+      // Upload room type images
+      const roomTypeImageUrls = await Promise.all(
+        data.roomTypes.map(async (roomType) => {
+          const imageUrls = await Promise.all(
+            roomType.images.map(async (imageFile) => {
+              // If it's an existing image (no file property or empty file), return the preview URL directly
+              if (!imageFile.file || imageFile.file.size === 0) {
+                return imageFile.preview;
+              }
+
+              const formData = new FormData();
+              formData.append("file", imageFile.file);
+              formData.append(
+                "folderName",
+                `hostels/rooms/${roomType.type.toLowerCase()}`
+              );
+
+              const response = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+              });
+
+              if (!response.ok) {
+                throw new Error(`Failed to upload ${roomType.type} room image`);
+              }
+
+              const result = await response.json();
+              return result.url;
+            })
+          );
+
+          return {
+            type: roomType.type,
+            images: imageUrls,
+          };
+        })
+      );
+
+      const formattedData: HostelFormData = {
+        name: data.name,
+        description: data.description,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        zipCode: data.zipCode,
+        country: data.country,
+        latitude: data.latitude ? Number(data.latitude) : 0,
+        longitude: data.longitude ? Number(data.longitude) : 0,
+        amenities: data.amenities,
+        images: hostelImageUrls,
+        roomTypes: roomTypeImageUrls,
+        status: data.status,
+        averageRating: data.averageRating,
+        reviewCount: data.reviewCount,
+        availableRooms: data.availableRooms,
+        lowestPrice: data.lowestPrice,
+        totalRooms: data.totalRooms,
+      };
+
+      await onSubmit(formattedData);
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      throw error;
+    }
   };
 
   return (
@@ -200,25 +311,97 @@ export default function HostelForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="images"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Images</FormLabel>
-              <FormControl>
-                <ImageUpload
-                  value={field.value}
-                  onChange={(urls) => field.onChange(urls)}
-                  onRemove={(url) =>
-                    field.onChange(field.value.filter((val) => val !== url))
-                  }
+        <div className="space-y-4">
+          <FormLabel>Hostel Images</FormLabel>
+          <FormField
+            control={form.control}
+            name="images"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="space-y-4">
+                    <ImageUpload
+                      hideLabel
+                      value={field.value}
+                      onChange={(files) => field.onChange(files)}
+                      onRemove={(index) => {
+                        const newImages = [...field.value];
+                        newImages.splice(index, 1);
+                        field.onChange(newImages);
+                      }}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="space-y-4">
+          <FormLabel>Room Types</FormLabel>
+          <Tabs defaultValue="ONE_SHARING" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              {ROOM_TYPES.map((type) => (
+                <TabsTrigger key={type} value={type}>
+                  {type
+                    .split("_")
+                    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+                    .join(" ")}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {ROOM_TYPES.map((type) => (
+              <TabsContent key={type} value={type}>
+                <FormField
+                  control={form.control}
+                  name="roomTypes"
+                  render={({ field }) => {
+                    const roomType = field.value.find(
+                      (rt) => rt.type === type
+                    ) || { type, images: [] };
+                    const index = field.value.findIndex(
+                      (rt) => rt.type === type
+                    );
+
+                    return (
+                      <FormItem>
+                        <FormControl>
+                          <ImageUpload
+                            hideLabel
+                            value={roomType.images}
+                            onChange={(files) => {
+                              const newRoomTypes = [...field.value];
+                              if (index === -1) {
+                                newRoomTypes.push({ type, images: files });
+                              } else {
+                                newRoomTypes[index] = { type, images: files };
+                              }
+                              field.onChange(newRoomTypes);
+                            }}
+                            onRemove={(imgIndex) => {
+                              const newRoomTypes = [...field.value];
+                              if (index !== -1) {
+                                newRoomTypes[index] = {
+                                  type,
+                                  images: roomType.images.filter(
+                                    (_, i) => i !== imgIndex
+                                  ),
+                                };
+                                field.onChange(newRoomTypes);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              </TabsContent>
+            ))}
+          </Tabs>
+        </div>
 
         <FormField
           control={form.control}

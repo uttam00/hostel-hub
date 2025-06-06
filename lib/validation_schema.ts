@@ -15,9 +15,16 @@ const baseHostelSchema = z.object({
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
 });
 
+// Schema for room type
+const roomTypeSchema = z.object({
+  type: z.enum(["ONE_SHARING", "TWO_SHARING", "THREE_SHARING", "FOUR_SHARING"]),
+  images: z.array(z.string()),
+});
+
 // Schema for hostel
 export const hostelSchema = baseHostelSchema.extend({
   images: z.array(z.string()).min(1, "At least one image is required"),
+  roomTypes: z.array(roomTypeSchema).default([]),
   totalRooms: z.number().min(1, "Must have at least 1 room"),
   adminId: z.string().optional(),
   averageRating: z.number().default(0),
