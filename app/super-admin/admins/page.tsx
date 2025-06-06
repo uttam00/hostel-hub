@@ -46,6 +46,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  assignHostelSchema,
+  createHostelAdminSchema,
+} from "@/lib/validation_schema";
 import { adminApi, hostelApi } from "@/services/api";
 import { Hostel, HostelAdmin, HostelStatus } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,16 +59,6 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 
 interface Admin extends HostelAdmin {}
-
-const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  // password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-const assignHostelSchema = z.object({
-  hostelIds: z.array(z.string()).min(1, "Please select at least one hostel"),
-});
 
 export default function AdminsPage() {
   const { toast } = useToast();
@@ -78,8 +72,8 @@ export default function AdminsPage() {
   const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
   const [assignHostelLoading, setAssignHostelLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof createHostelAdminSchema>>({
+    resolver: zodResolver(createHostelAdminSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -138,7 +132,7 @@ export default function AdminsPage() {
     fetchHostels();
   }, []);
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof createHostelAdminSchema>) => {
     try {
       await adminApi.create(values);
 
@@ -448,7 +442,7 @@ export default function AdminsPage() {
                             );
                           })}
                         </div>
-                      </div>  
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

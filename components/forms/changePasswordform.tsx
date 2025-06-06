@@ -7,23 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-
-const passwordSchema = z
-  .object({
-    currentPassword: z.string().min(6),
-    newPassword: z
-      .string()
-      .min(6)
-      .regex(/[A-Z]/)
-      .regex(/[a-z]/)
-      .regex(/[0-9]/)
-      .regex(/[^A-Za-z0-9]/),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+import { changePasswordSchema } from "@/lib/validation_schema";
 
 export default function ChangePasswordForm() {
   const [passwordData, setPasswordData] = useState({
@@ -44,7 +28,7 @@ export default function ChangePasswordForm() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const validated = passwordSchema.parse(passwordData);
+      const validated = changePasswordSchema.parse(passwordData);
 
       const res = await fetch("/api/change-password", {
         method: "POST",

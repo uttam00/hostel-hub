@@ -19,11 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { setUserCookie } from "@/lib/cookies";
-
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
+import { loginSchema } from "@/lib/validation_schema";
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 

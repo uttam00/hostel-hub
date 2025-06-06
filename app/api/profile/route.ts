@@ -1,15 +1,9 @@
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { updateProfileSchema } from "@/lib/validation_schema";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth";
-
-const updateProfileSchema = z.object({
-  id: z.string(),
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
-  image: z.string(),
-});
 
 export async function PUT(req: Request) {
   try {

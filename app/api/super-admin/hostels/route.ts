@@ -5,64 +5,7 @@ import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { RoomType, Prisma } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
-
-const hostelSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  address: z.string().min(5, "Address must be at least 5 characters"),
-  city: z.string().min(2, "City must be at least 2 characters"),
-  state: z.string().min(2, "State must be at least 2 characters"),
-  zipCode: z.string().min(5, "Zip code must be at least 5 characters"),
-  country: z.string().min(2, "Country must be at least 2 characters"),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  amenities: z.array(z.string()),
-  images: z.array(z.string()).min(1, "At least one image is required"),
-  totalRooms: z.number().min(1, "Must have at least 1 room"),
-  adminId: z.string().optional(),
-  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
-  averageRating: z.number().default(0),
-  reviewCount: z.number().default(0),
-  availableRooms: z.number().default(0),
-  lowestPrice: z.number().default(0),
-});
-
-// Schema for hostel status update
-const hostelStatusSchema = z.object({
-  status: z.enum(["ACTIVE", "INACTIVE"]),
-});
-
-// Schema for hostel update
-const hostelUpdateSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").optional(),
-  description: z
-    .string()
-    .min(10, "Description must be at least 10 characters")
-    .optional(),
-  address: z
-    .string()
-    .min(5, "Address must be at least 5 characters")
-    .optional(),
-  city: z.string().min(2, "City must be at least 2 characters").optional(),
-  state: z.string().min(2, "State must be at least 2 characters").optional(),
-  zipCode: z
-    .string()
-    .min(5, "Zip code must be at least 5 characters")
-    .optional(),
-  country: z
-    .string()
-    .min(2, "Country must be at least 2 characters")
-    .optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  amenities: z.array(z.string()).optional(),
-  images: z.array(z.string()).optional(),
-  status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
-  averageRating: z.number().optional(),
-  reviewCount: z.number().optional(),
-  availableRooms: z.number().optional(),
-  lowestPrice: z.number().optional(),
-});
+import { hostelSchema, hostelUpdateSchema } from "@/lib/validation_schema";
 
 // Define types for the hostel with included relations
 type HostelWithRelations = {

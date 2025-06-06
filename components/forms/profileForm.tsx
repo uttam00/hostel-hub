@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
+import { updateProfileSchema } from "@/lib/validation_schema";
 import { userApi } from "@/services/api";
 import { X } from "lucide-react";
 import Image from "next/image";
@@ -15,15 +16,9 @@ import "react-phone-number-input/style.css";
 import { toast } from "sonner";
 import { z } from "zod";
 
-const profileSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
-  image: z.string(),
-});
-
 export default function ProfileForm() {
   const { user, updateUser } = useAuth();
+  console.log("User in ProfileForm:", user);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -91,7 +86,7 @@ export default function ProfileForm() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const validated = profileSchema.parse(formData);
+      const validated = updateProfileSchema.parse(formData);
 
       // Upload image to Cloudinary if there's a new image
       let uploadedImage = formData.image;

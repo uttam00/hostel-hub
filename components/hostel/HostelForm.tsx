@@ -18,6 +18,7 @@ import * as z from "zod";
 import ImageUpload from "../ImageUpload";
 import LocationPicker from "@/components/LocationPicker";
 import { HostelStatus } from "@prisma/client";
+import { hostelSchema } from "@/lib/validation_schema";
 
 type HostelFormData = Omit<
   HostelDetails,
@@ -50,33 +51,13 @@ interface HostelFormProps {
   isLoading?: boolean;
 }
 
-const hostelFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
-  address: z.string().min(1, "Address is required"),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  zipCode: z.string().min(1, "Zip code is required"),
-  latitude: z.string().optional(),
-  longitude: z.string().optional(),
-  amenities: z.string().min(1, "At least one amenity is required"),
-  images: z.array(z.string()).min(1, "At least one image is required"),
-  country: z.string().default("USA"),
-  status: z.nativeEnum(HostelStatus).default(HostelStatus.ACTIVE),
-  averageRating: z.number().default(0),
-  reviewCount: z.number().default(0),
-  availableRooms: z.number().default(0),
-  lowestPrice: z.number().default(0),
-  totalRooms: z.number().default(0),
-});
-
 export default function HostelForm({
   initialData,
   onSubmit,
   isLoading = false,
 }: HostelFormProps) {
   const form = useForm<HostelFormValues>({
-    resolver: zodResolver(hostelFormSchema),
+    resolver: zodResolver(hostelSchema),
     defaultValues: {
       name: initialData?.name || "",
       description: initialData?.description || "",

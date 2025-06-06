@@ -1,50 +1,8 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import { z } from "zod";
-import { RoomType } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
-
-const hostelSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  address: z.string().min(5, "Address must be at least 5 characters"),
-  city: z.string().min(2, "City must be at least 2 characters"),
-  state: z.string().min(2, "State must be at least 2 characters"),
-  zipCode: z.string().min(5, "Zip code must be at least 5 characters"),
-  country: z.string().min(2, "Country must be at least 2 characters"),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  amenities: z.array(z.string()),
-  images: z.array(z.string()).min(1, "At least one image is required"),
-  totalRooms: z.number().min(1, "Must have at least 1 room"),
-  adminId: z.string().optional(),
-  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
-  averageRating: z.number().default(0),
-  reviewCount: z.number().default(0),
-  availableRooms: z.number().default(0),
-  lowestPrice: z.number().default(0),
-});
-
-const hostelUpdateSchema = z.object({
-  name: z.string().min(2).optional(),
-  description: z.string().min(10).optional(),
-  address: z.string().min(5).optional(),
-  city: z.string().min(2).optional(),
-  state: z.string().min(2).optional(),
-  zipCode: z.string().min(5).optional(),
-  country: z.string().min(2).optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  amenities: z.array(z.string()).optional(),
-  images: z.array(z.string()).optional(),
-  status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
-  averageRating: z.number().optional(),
-  reviewCount: z.number().optional(),
-  availableRooms: z.number().optional(),
-  lowestPrice: z.number().optional(),
-});
+import prisma from "@/lib/prisma";
+import { hostelUpdateSchema } from "@/lib/validation_schema";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 
 // GET all hostels for super admin or own hostel for hostel admin
 export async function GET(req: Request) {

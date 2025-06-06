@@ -3,20 +3,8 @@ import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { Prisma } from "@prisma/client";
+import { createHostelSchema } from "@/lib/validation_schema";
 
-// Schema for hostel creation/update
-const hostelSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  address: z.string().min(5, "Address must be at least 5 characters"),
-  city: z.string().min(2, "City must be at least 2 characters"),
-  state: z.string().min(2, "State must be at least 2 characters"),
-  zipCode: z.string().min(5, "Zip code must be at least 5 characters"),
-  country: z.string().min(2, "Country must be at least 2 characters"),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  amenities: z.array(z.string()),
-});
 
 // GET all hostels
 export async function GET(req: Request) {
@@ -140,7 +128,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const validatedData = hostelSchema.parse(body);
+    const validatedData = createHostelSchema.parse(body);
 
     const hostel = await prisma.hostel.create({
       data: {

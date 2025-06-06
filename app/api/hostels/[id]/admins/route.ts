@@ -2,11 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-
-// Schema for adding/removing admin
-const adminSchema = z.object({
-  userId: z.string().min(1, "User ID is required"),
-});
+import { adminSchema } from "@/lib/validation_schema";
 
 // GET all admins for a hostel
 export async function GET(

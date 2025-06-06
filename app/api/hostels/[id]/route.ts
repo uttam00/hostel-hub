@@ -1,37 +1,8 @@
+import { getCurrentUser } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+import { hostelUpdateSchema } from "@/lib/validation_schema";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-
-// Schema for hostel update
-const hostelUpdateSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").optional(),
-  description: z
-    .string()
-    .min(10, "Description must be at least 10 characters")
-    .optional(),
-  address: z
-    .string()
-    .min(5, "Address must be at least 5 characters")
-    .optional(),
-  city: z.string().min(2, "City must be at least 2 characters").optional(),
-  state: z.string().min(2, "State must be at least 2 characters").optional(),
-  zipCode: z
-    .string()
-    .min(5, "Zip code must be at least 5 characters")
-    .optional(),
-  country: z
-    .string()
-    .min(2, "Country must be at least 2 characters")
-    .optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  amenities: z.array(z.string()).optional(),
-  status: z.enum(["ACTIVE", "INACTIVE"]),
-  images: z.array(z.string()).optional(),
-});
 
 // GET a specific hostel
 export async function GET(req: Request, context: { params: { id: string } }) {

@@ -2,20 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-
-// Schema for booking update
-const bookingUpdateSchema = z.object({
-  status: z.enum(["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"]).optional(),
-  checkIn: z
-    .string()
-    .transform((str) => new Date(str))
-    .optional(),
-  checkOut: z
-    .string()
-    .transform((str) => new Date(str))
-    .optional(),
-  totalPrice: z.number().positive("Total price must be positive").optional(),
-});
+import { bookingUpdateSchema } from "@/lib/validation_schema";
 
 // GET a specific booking
 export async function GET(

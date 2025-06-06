@@ -2,12 +2,8 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import prisma from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth"
+import { paymentSchema } from "@/lib/validation_schema"
 
-// Schema for payment creation
-const paymentSchema = z.object({
-  amount: z.number().positive("Amount must be positive"),
-  method: z.string().min(1, "Payment method is required"),
-})
 
 // GET all payments for a booking
 export async function GET(req: Request, { params }: { params: { id: string } }) {

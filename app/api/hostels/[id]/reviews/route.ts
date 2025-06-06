@@ -2,12 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import prisma from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth"
-
-// Schema for review creation
-const reviewSchema = z.object({
-  rating: z.number().int().min(1).max(5),
-  comment: z.string().optional(),
-})
+import { reviewSchema } from "@/lib/validation_schema"
 
 // GET all reviews for a hostel
 export async function GET(req: Request, { params }: { params: { id: string } }) {

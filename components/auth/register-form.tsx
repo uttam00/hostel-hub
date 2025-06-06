@@ -1,67 +1,78 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2 } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+import { registerUserSchemaWithConfirm } from "@/lib/validation_schema";
+import { useAuth } from "@/hooks/use-auth";
 
-const registerSchema = z
-  .object({
-    name: z.string().min(2, "Name must be at least 2 characters"),
-    email: z.string().email("Invalid email address"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string(),
-    role: z.enum(["STUDENT", "HOSTEL_ADMIN"]),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
+const registerSchema = registerUserSchemaWithConfirm.refine(
+  (data) => data.password === data.confirmPassword,
+  {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-  })
+  }
+);
 
-type RegisterFormValues = z.infer<typeof registerSchema>
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export function RegisterForm() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { updateUser } = useAuth();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<RegisterFormValues>({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
     role: "STUDENT",
-  })
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-    setError(null)
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setError(null);
+  };
 
   const handleRoleChange = (value: string) => {
     setFormData((prev) => ({
       ...prev,
       role: value as "STUDENT" | "HOSTEL_ADMIN",
-    }))
-    setError(null)
-  }
+    }));
+    setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
     try {
       // Validate form data
-      registerSchema.parse(formData)
+      registerSchema.parse(formData);
 
       // Send registration request
       const response = await fetch("/api/auth/register", {
@@ -75,12 +86,16 @@ export function RegisterForm() {
           password: formData.password,
           role: formData.role,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Registration failed")
+        throw new Error(data.error || "Registration failed");
+      }
+
+      if (data) {
+        updateUser(data);
       }
 
       // Sign in the user
@@ -88,40 +103,51 @@ export function RegisterForm() {
         email: formData.email,
         password: formData.password,
         redirect: false,
-      })
+      });
 
       if (result?.error) {
-        setError("Registration successful, but login failed. Please try logging in.")
-        setIsLoading(false)
-        router.push("/auth/login")
-        return
+        setError(
+          "Registration successful, but login failed. Please try logging in."
+        );
+        setIsLoading(false);
+        router.push("/auth/login");
+        return;
       }
 
-      router.push("/dashboard")
-      router.refresh()
+      router.push("/dashboard");
+      router.refresh();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const fieldErrors = error.flatten().fieldErrors
-        const errorMessage = Object.values(fieldErrors)[0]?.[0] || "Invalid input"
-        setError(errorMessage)
+        const fieldErrors = error.flatten().fieldErrors;
+        const errorMessage =
+          Object.values(fieldErrors)[0]?.[0] || "Invalid input";
+        setError(errorMessage);
       } else if (error instanceof Error) {
-        setError(error.message)
+        setError(error.message);
       } else {
-        setError("Something went wrong. Please try again.")
+        setError("Something went wrong. Please try again.");
       }
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">Create an account</CardTitle>
-        <CardDescription className="text-center">Enter your details to create your account</CardDescription>
+        <CardTitle className="text-2xl text-center">
+          Create an account
+        </CardTitle>
+        <CardDescription className="text-center">
+          Enter your details to create your account
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
-          {error && <div className="bg-destructive/10 text-destructive text-sm p-2 rounded-md">{error}</div>}
+          {error && (
+            <div className="bg-destructive/10 text-destructive text-sm p-2 rounded-md">
+              {error}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
@@ -175,7 +201,9 @@ export function RegisterForm() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="STUDENT">Student</SelectItem>
-                <SelectItem value="HOSTEL_ADMIN">Hostel Administrator</SelectItem>
+                <SelectItem value="HOSTEL_ADMIN">
+                  Hostel Administrator
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -194,5 +222,5 @@ export function RegisterForm() {
         </CardFooter>
       </form>
     </Card>
-  )
+  );
 }

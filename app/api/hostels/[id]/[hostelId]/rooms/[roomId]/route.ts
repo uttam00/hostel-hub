@@ -2,21 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { roomUpdateSchema } from "@/lib/validation_schema";
 
-// Schema for room update
-const roomUpdateSchema = z.object({
-  roomNumber: z.string().min(1, "Room number is required").optional(),
-  roomType: z.enum(["SINGLE", "DOUBLE", "TRIPLE", "DORMITORY"]).optional(),
-  description: z.string().optional(),
-  price: z.number().positive("Price must be positive").optional(),
-  capacity: z
-    .number()
-    .int()
-    .positive("Capacity must be a positive integer")
-    .optional(),
-  isAvailable: z.boolean().optional(),
-  amenities: z.array(z.string()).optional(),
-});
 
 // GET a specific room
 export async function GET(
